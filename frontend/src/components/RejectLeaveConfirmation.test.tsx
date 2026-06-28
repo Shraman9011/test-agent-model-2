@@ -79,6 +79,7 @@ describe('RejectLeaveConfirmation', () => {
     });
     
     expect(screen.getByTestId('reject-success')).toBeInTheDocument();
+    expect(screen.getByText(/Decision saved and employee notified via email/i)).toBeInTheDocument();
   });
 
   it('handles API errors correctly', async () => {

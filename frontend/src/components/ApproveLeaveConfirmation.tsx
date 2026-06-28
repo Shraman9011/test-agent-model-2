@@ -44,7 +44,7 @@ export function ApproveLeaveConfirmation({ leaveRequest, onSuccess, onCancel }: 
       <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center text-green-700 animate-in fade-in" data-testid="approve-success">
         <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
         <h3 className="text-lg font-medium">Request Approved Successfully</h3>
-        <p className="mt-2 text-sm text-green-600">The leave request has been approved and moved to history.</p>
+        <p className="mt-2 text-sm text-green-600">Decision saved and employee notified via email.</p>
       </div>
     );
   }

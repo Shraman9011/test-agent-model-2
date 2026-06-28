@@ -53,6 +53,7 @@ describe('ApproveLeaveConfirmation', () => {
     });
     
     expect(screen.getByTestId('approve-success')).toBeInTheDocument();
+    expect(screen.getByText(/Decision saved and employee notified via email/i)).toBeInTheDocument();
   });
 
   it('handles successful approval with comments', async () => {

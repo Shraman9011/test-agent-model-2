@@ -50,7 +50,7 @@ export function RejectLeaveConfirmation({ leaveRequest, onSuccess, onCancel }: R
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700 animate-in fade-in" data-testid="reject-success">
         <CheckCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
         <h3 className="text-lg font-medium">Request Rejected Successfully</h3>
-        <p className="mt-2 text-sm text-red-600">The leave request has been rejected and moved to history.</p>
+        <p className="mt-2 text-sm text-red-600">Decision saved and employee notified via email.</p>
       </div>
     );
   }

@@ -26,7 +26,7 @@ export function LeaveBalances(): React.JSX.Element {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchBalances = async () => {
+    const fetchBalances = async (): Promise<void> => {
       try {
         setLoading(true);
         setError(null);

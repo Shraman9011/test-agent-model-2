@@ -16,7 +16,7 @@ export function UpcomingHolidays(): React.JSX.Element {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchHolidays = async () => {
+    const fetchHolidays = async (): Promise<void> => {
       try {
         setLoading(true);
         setError(null);

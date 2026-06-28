@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from leaves.models import LeaveBalance, LeaveType
+from leaves.models import LeaveBalance, LeaveType, Holiday
 
 class LeaveTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +21,8 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
             'pending_days', 
             'remaining_days'
         ]
+
+class HolidaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Holiday
+        fields = ['id', 'name', 'date', 'description']

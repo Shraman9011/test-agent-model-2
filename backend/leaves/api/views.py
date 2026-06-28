@@ -3,8 +3,8 @@ from datetime import date
 from django.core.cache import cache
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from leaves.models import LeaveBalance
-from .serializers import LeaveBalanceSerializer
+from leaves.models import LeaveBalance, Holiday
+from .serializers import LeaveBalanceSerializer, HolidaySerializer
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +45,20 @@ class LeaveBalanceListView(generics.ListAPIView):
         # Store in cache for 1 hour (3600 seconds)
         cache.set(cache_key, data, timeout=3600)
         return Response(data)
+
+class HolidayListView(generics.ListAPIView):
+    """
+    GET /api/holidays
+    Retrieves chronological list of upcoming company holidays for the current year.
+    Filters out past holidays.
+    """
+    serializer_class = HolidaySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        current_date = date.today()
+        # Filter holidays that are >= today and in the current calendar year
+        return Holiday.objects.filter(
+            date__gte=current_date,
+            date__year=current_date.year
+        ).order_by('date')

@@ -11,6 +11,8 @@ import { EmployeeDashboard } from './pages/EmployeeDashboard';
 import { ManagerDashboard } from './pages/ManagerDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AccessDeniedPage } from './pages/AccessDeniedPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 function App(): React.JSX.Element {
   return (
@@ -19,6 +21,8 @@ function App(): React.JSX.Element {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Root redirect handles routing after login based on role */}
           <Route path="/" element={<PostLoginRedirect />} />

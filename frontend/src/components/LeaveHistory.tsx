@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { AlertCircle, Edit2 } from 'lucide-react';
+import { AlertCircle, Edit2, XCircle } from 'lucide-react';
 import { Modal } from './Modal';
 import { EditLeaveForm } from './EditLeaveForm';
+import { CancelLeaveConfirmation } from './CancelLeaveConfirmation';
 
 export interface LeaveRequest {
   id: number;
@@ -17,12 +18,17 @@ export interface LeaveRequest {
   rejection_reason?: string;
 }
 
-export function LeaveHistory(): React.JSX.Element {
+interface LeaveHistoryProps {
+  onStateChange?: () => void;
+}
+
+export function LeaveHistory({ onStateChange }: LeaveHistoryProps = {}): React.JSX.Element {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [cancellingRequest, setCancellingRequest] = useState<LeaveRequest | null>(null);
 
   const fetchHistory = async (): Promise<void> => {
     try {
@@ -44,6 +50,13 @@ export function LeaveHistory(): React.JSX.Element {
   const handleEditSuccess = (): void => {
     setEditingRequest(null);
     fetchHistory();
+    if (onStateChange) onStateChange();
+  };
+
+  const handleCancelSuccess = (): void => {
+    setCancellingRequest(null);
+    fetchHistory();
+    if (onStateChange) onStateChange();
   };
 
   if (loading) {
@@ -89,7 +102,11 @@ export function LeaveHistory(): React.JSX.Element {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {requests.map((req) => (
+              {requests.map((req) => {
+                const isFutureRequest = new Date(req.start_date) > new Date();
+                const canCancel = req.status === 'PENDING' || (req.status === 'APPROVED' && isFutureRequest);
+                
+                return (
                 <tr key={req.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                     {req.leave_type.name}
@@ -108,21 +125,42 @@ export function LeaveHistory(): React.JSX.Element {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {req.status === 'PENDING' ? (
-                      <button 
-                        onClick={() => setEditingRequest(req)}
-                        className="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                        aria-label="Edit Request"
-                      >
-                        <Edit2 className="w-4 h-4 mr-1" />
-                        Edit
-                      </button>
-                    ) : (
-                      <span className="text-gray-400" title="Only pending requests can be edited">-</span>
-                    )}
+                    <div className="flex justify-end space-x-3">
+                      {req.status === 'PENDING' ? (
+                        <button 
+                          onClick={() => setEditingRequest(req)}
+                          className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                          aria-label="Edit Request"
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Edit
+                        </button>
+                      ) : (
+                        <span className="text-gray-300 inline-flex items-center" title="Only pending requests can be edited">
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Edit
+                        </span>
+                      )}
+                      
+                      {canCancel ? (
+                        <button 
+                          onClick={() => setCancellingRequest(req)}
+                          className="text-red-600 hover:text-red-900 inline-flex items-center"
+                          aria-label="Cancel Request"
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Cancel
+                        </button>
+                      ) : (
+                        <span className="text-gray-300 inline-flex items-center" title="Request cannot be cancelled">
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Cancel
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -134,6 +172,16 @@ export function LeaveHistory(): React.JSX.Element {
             leaveRequest={editingRequest} 
             onSuccess={handleEditSuccess} 
             onCancel={() => setEditingRequest(null)} 
+          />
+        )}
+      </Modal>
+
+      <Modal isOpen={cancellingRequest !== null} onClose={() => setCancellingRequest(null)}>
+        {cancellingRequest && (
+          <CancelLeaveConfirmation 
+            leaveRequest={cancellingRequest} 
+            onSuccess={handleCancelSuccess} 
+            onCancel={() => setCancellingRequest(null)} 
           />
         )}
       </Modal>

@@ -45,7 +45,7 @@ export function EmployeeDashboard(): React.JSX.Element {
       <LeaveBalances key={`balances-${refreshKey}`} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LeaveHistory key={`history-${refreshKey}`} />
+        <LeaveHistory key={`history-${refreshKey}`} onStateChange={() => setRefreshKey(prev => prev + 1)} />
         <UpcomingHolidays />
       </div>
     </div>

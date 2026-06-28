@@ -45,7 +45,11 @@ describe('LeaveHistory', () => {
       expect(screen.getByText('Sick')).toBeInTheDocument();
     });
 
-    const buttons = screen.getAllByRole('button', { name: /edit request/i });
-    expect(buttons.length).toBe(1);
+    const editBtns = screen.getAllByRole('button', { name: /edit request/i });
+    expect(editBtns.length).toBe(1);
+
+    const cancelBtns = screen.getAllByRole('button', { name: /cancel request/i });
+    // Both requests are cancellable since '2026-08-01' is in the future for tests
+    expect(cancelBtns.length).toBe(2);
   });
 });

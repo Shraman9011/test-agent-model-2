@@ -206,6 +206,18 @@ class LeaveAdjustmentAuditLog(models.Model):
         decimal_places=1,
         help_text="Positive for addition, negative for deduction."
     )
+    previous_balance = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        default=Decimal('0.0'),
+        help_text="Balance before the adjustment."
+    )
+    new_balance = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        default=Decimal('0.0'),
+        help_text="Balance after the adjustment."
+    )
     reason = models.TextField()
     adjusted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

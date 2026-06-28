@@ -229,3 +229,23 @@ class LeavePolicySerializer(serializers.ModelSerializer):
             ).update(allocated_days=new_days)
             
         return instance
+
+from leaves.models import LeaveAdjustmentAuditLog
+
+class LeaveAdjustmentAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveAdjustmentAuditLog
+        fields = '__all__'
+        read_only_fields = ['adjusted_by', 'timestamp']
+
+class LeaveBalanceAdjustmentSerializer(serializers.Serializer):
+    employee_id = serializers.IntegerField()
+    leave_type_id = serializers.IntegerField()
+    year = serializers.IntegerField(required=False)
+    adjustment_amount = serializers.DecimalField(max_digits=5, decimal_places=1)
+    reason = serializers.CharField(required=True, allow_blank=False, min_length=1)
+
+    def validate_reason(self, value):
+        if not value or not str(value).strip():
+            raise serializers.ValidationError("Reason is required and cannot be empty.")
+        return str(value).strip()

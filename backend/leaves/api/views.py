@@ -406,3 +406,74 @@ class LeavePolicyViewSet(viewsets.ModelViewSet):
     # We only need GET and PUT/PATCH typically, but ModelViewSet provides all.
     # We can restrict to list, retrieve, update, partial_update
     http_method_names = ['get', 'put', 'patch', 'head', 'options']
+
+from .serializers import LeaveBalanceAdjustmentSerializer, LeaveAdjustmentAuditLogSerializer
+from leaves.models import LeaveAdjustmentAuditLog, LeaveType
+from users.models import EmployeeProfile
+
+class LeaveBalanceAdjustView(APIView):
+    """
+    POST /api/v1/leave-balances/adjust/
+    Manual adjustment of a leave balance by an HR Admin.
+    """
+    permission_classes = [IsHRAdmin]
+
+    def post(self, request, *args, **kwargs):
+        serializer = LeaveBalanceAdjustmentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        data = serializer.validated_data
+        employee_id = data['employee_id']
+        leave_type_id = data['leave_type_id']
+        year = data.get('year', date.today().year)
+        adjustment_amount = data['adjustment_amount']
+        reason = data['reason']
+        
+        try:
+            employee = EmployeeProfile.objects.get(user_id=employee_id)
+        except EmployeeProfile.DoesNotExist:
+            return Response({"employee_id": ["Employee not found."]}, status=status.HTTP_404_NOT_FOUND)
+            
+        try:
+            leave_type = LeaveType.objects.get(id=leave_type_id)
+        except LeaveType.DoesNotExist:
+            return Response({"leave_type_id": ["Leave type not found."]}, status=status.HTTP_404_NOT_FOUND)
+            
+        with transaction.atomic():
+            # Get or create the balance
+            balance, created = LeaveBalance.objects.select_for_update().get_or_create(
+                employee=employee,
+                leave_type=leave_type,
+                year=year,
+                defaults={
+                    'allocated_days': Decimal('0.0'),
+                    'used_days': Decimal('0.0'),
+                    'pending_days': Decimal('0.0')
+                }
+            )
+            
+            previous_balance = balance.allocated_days
+            new_balance = previous_balance + adjustment_amount
+            
+            # Apply adjustment
+            balance.allocated_days = new_balance
+            balance.save()
+            
+            # Create Audit Log
+            audit_log = LeaveAdjustmentAuditLog.objects.create(
+                employee=employee,
+                leave_type=leave_type,
+                adjustment_amount=adjustment_amount,
+                previous_balance=previous_balance,
+                new_balance=new_balance,
+                reason=reason,
+                adjusted_by=request.user
+            )
+            
+        return Response({
+            "message": "Leave balance adjusted successfully.",
+            "audit_log_id": audit_log.id,
+            "previous_balance": str(previous_balance),
+            "new_balance": str(new_balance)
+        }, status=status.HTTP_200_OK)

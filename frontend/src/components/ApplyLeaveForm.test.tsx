@@ -83,7 +83,7 @@ describe('ApplyLeaveForm', () => {
         total_days: 2,
         reason: 'Vacation',
       });
-      expect(screen.getByText('Request Submitted Successfully')).toBeInTheDocument();
+      expect(screen.getByText(/An email notification has been sent to your manager/i)).toBeInTheDocument();
     });
   });
 

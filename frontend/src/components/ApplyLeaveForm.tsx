@@ -111,7 +111,7 @@ export function ApplyLeaveForm({ onSuccess, onCancel }: ApplyLeaveFormProps): Re
       <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center text-green-700 animate-in fade-in">
         <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
         <h3 className="text-lg font-medium">Request Submitted Successfully</h3>
-        <p className="mt-2 text-sm text-green-600">Your leave request has been sent for approval.</p>
+        <p className="mt-2 text-sm text-green-600">Your leave request has been sent for approval. An email notification has been sent to your manager.</p>
       </div>
     );
   }

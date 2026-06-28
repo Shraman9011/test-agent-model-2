@@ -161,7 +161,7 @@ class LeaveRequestModelTest(TestCase):
             idx.name
             for idx in LeaveRequest._meta.indexes
         }
-        self.assertIn('idx_leavereq_emp_status', index_names)
+        self.assertIn('idx_leavereq_emp_stat_type', index_names)
         self.assertIn('idx_leavereq_dates', index_names)
 
 

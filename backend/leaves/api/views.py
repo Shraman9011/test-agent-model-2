@@ -223,3 +223,67 @@ class ManagerPendingLeavesView(generics.ListAPIView):
             pass
             
         return Response(data)
+
+from django.utils import timezone
+
+class LeaveRequestApproveView(APIView):
+    """
+    POST /api/v1/manager/leave-requests/{id}/approve
+    Approve a pending leave request with optional comments.
+    """
+    permission_classes = [IsManager]
+
+    def post(self, request, pk, format=None):
+        leave_request = get_object_or_404(LeaveRequest, pk=pk)
+        
+        # Ensure the user is the assigned manager
+        if leave_request.manager != request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You are not authorized to approve this request.")
+            
+        if leave_request.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {"error": "Only pending requests can be approved."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        comments = request.data.get('comments', '')
+        
+        with transaction.atomic():
+            try:
+                balance = LeaveBalance.objects.select_for_update().get(
+                    employee=leave_request.employee,
+                    leave_type=leave_request.leave_type,
+                    year=date.today().year
+                )
+            except LeaveBalance.DoesNotExist:
+                return Response({"error": "Leave balance not found."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Move days from pending to used
+            balance.pending_days -= Decimal(str(leave_request.total_days))
+            if balance.pending_days < 0:
+                balance.pending_days = Decimal('0.0')
+            balance.used_days += Decimal(str(leave_request.total_days))
+            balance.save()
+            
+            leave_request.status = LeaveRequest.Status.APPROVED
+            leave_request.manager_comments = comments
+            leave_request.reviewed_at = timezone.now()
+            leave_request.save()
+            
+            # Invalidate manager pending leaves cache
+            cache_key = f"manager_pending_leaves_{request.user.id}"
+            try:
+                cache.delete(cache_key)
+            except Exception:
+                pass
+            
+            # Send notification
+            try:
+                from leaves.email_utils import send_employee_decision_notification
+                send_employee_decision_notification(leave_request)
+            except Exception as e:
+                logger.error(f"Failed to send decision notification email: {e}")
+            
+        serializer = LeaveRequestSerializer(leave_request)
+        return Response(serializer.data, status=status.HTTP_200_OK)

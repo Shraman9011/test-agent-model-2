@@ -5,7 +5,10 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from leaves.models import LeaveBalance, Holiday, LeaveRequest
-from .serializers import LeaveBalanceSerializer, HolidaySerializer, LeaveRequestSerializer
+from .serializers import (
+    LeaveBalanceSerializer, HolidaySerializer, LeaveRequestSerializer,
+    LeaveRequestCreateSerializer
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,3 +103,12 @@ class LeaveRequestHistoryView(generics.ListAPIView):
             queryset = queryset.filter(leave_type_id=leave_type_id)
             
         return queryset
+
+class LeaveRequestCreateView(generics.CreateAPIView):
+    """
+    POST /api/leaves/
+    Submit a new leave request. Validates date overlap and balance.
+    """
+    serializer_class = LeaveRequestCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+

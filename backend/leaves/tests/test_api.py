@@ -227,3 +227,93 @@ class LeaveRequestHistoryAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['leave_type']['name'], 'Sick')
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class LeaveRequestCreateAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='create_tester@example.com',
+            password='Password123!'
+        )
+        self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
+        self.current_year = date.today().year
+        
+        self.balance = LeaveBalance.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            year=self.current_year,
+            allocated_days=Decimal('20.0'),
+            used_days=Decimal('5.0'),
+            pending_days=Decimal('5.0')
+        )
+        # Remaining balance is 20 - 5 - 5 = 10 days
+        
+        from leaves.models import LeaveRequest
+        self.existing_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=date(self.current_year, 10, 1),
+            end_date=date(self.current_year, 10, 5),
+            total_days=5,
+            status=LeaveRequest.Status.APPROVED
+        )
+        
+        self.url = reverse('leaves_api:leave-create')
+
+    def test_create_leave_success(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            'leave_type': self.leave_type.id,
+            'start_date': f'{self.current_year}-11-01',
+            'end_date': f'{self.current_year}-11-05',
+            'total_days': 5,
+            'reason': 'Vacation'
+        }
+        response = self.client.post(self.url, payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.balance.refresh_from_db()
+        # Pending days should have increased by 5 (from 5 to 10)
+        self.assertEqual(self.balance.pending_days, Decimal('10.0'))
+
+    def test_create_leave_overlap_error(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            'leave_type': self.leave_type.id,
+            'start_date': f'{self.current_year}-10-03',
+            'end_date': f'{self.current_year}-10-07',
+            'total_days': 5,
+            'reason': 'Overlap'
+        }
+        response = self.client.post(self.url, payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Requested dates overlap with an existing leave request.", str(response.data))
+
+    def test_create_leave_insufficient_balance(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            'leave_type': self.leave_type.id,
+            'start_date': f'{self.current_year}-12-01',
+            'end_date': f'{self.current_year}-12-15',
+            'total_days': 15, # we only have 10 remaining
+            'reason': 'Too long'
+        }
+        response = self.client.post(self.url, payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Requested days exceed available leave balance.", str(response.data))
+
+    def test_create_leave_invalid_dates(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            'leave_type': self.leave_type.id,
+            'start_date': f'{self.current_year}-11-10',
+            'end_date': f'{self.current_year}-11-05', # End before start
+            'total_days': 5,
+            'reason': 'Invalid dates'
+        }
+        response = self.client.post(self.url, payload, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("end_date", response.data)

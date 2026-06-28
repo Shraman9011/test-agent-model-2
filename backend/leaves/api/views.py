@@ -181,3 +181,45 @@ class LeaveRequestCancelView(APIView):
         return Response({"status": "cancelled", "message": "Leave request cancelled successfully."}, status=status.HTTP_200_OK)
 
 
+class IsManager(permissions.BasePermission):
+    """Allows access only to managers."""
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_manager)
+
+
+class ManagerPendingLeavesView(generics.ListAPIView):
+    """
+    GET /api/v1/manager/leave-requests/pending
+    Retrieves pending leave requests for the direct reports of the logged-in manager.
+    Integrated with Redis caching.
+    """
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [IsManager]
+
+    def get_queryset(self):
+        return LeaveRequest.objects.filter(
+            manager=self.request.user,
+            status=LeaveRequest.Status.PENDING
+        ).select_related('leave_type', 'employee').order_by('start_date')
+
+    def list(self, request, *args, **kwargs):
+        cache_key = f"manager_pending_leaves_{request.user.id}"
+        
+        try:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data)
+        except Exception:
+            pass
+            
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        
+        try:
+            # Cache for 5 minutes (300 seconds)
+            cache.set(cache_key, data, timeout=300)
+        except Exception:
+            pass
+            
+        return Response(data)

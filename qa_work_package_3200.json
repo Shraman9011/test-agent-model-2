@@ -1,0 +1,208 @@
+{
+  "summary": {
+    "taskId": 3200,
+    "taskName": "Design and execute QA test cases for Cancelling Leave Requests",
+    "priority": "MEDIUM",
+    "storyPoints": 2,
+    "dueDate": "2026-08-05T17:00:00.000Z",
+    "assignee": "Mayur Deshmukh",
+    "blockedBy": []
+  },
+  "test_plan": {
+    "objective": "Verify the cancellation workflow for PENDING and APPROVED-future leave requests, the disabled cancel state for REJECTED/past-APPROVED, and accurate balance restoration messaging.",
+    "scope": {
+      "in_scope": [
+        "Cancel button enabled for PENDING requests",
+        "Cancel button disabled (span) for REJECTED and past-APPROVED requests",
+        "Confirmation modal renders correctly",
+        "Successful cancellation shows 'Request Cancelled Successfully'",
+        "Keep Request button dismisses without cancelling"
+      ],
+      "out_of_scope": [
+        "Manager approval/rejection workflow",
+        "Backend balance ledger verification (covered by API tests)",
+        "Email notification on cancel"
+      ]
+    },
+    "test_types": ["E2E UI", "Positive", "Negative"],
+    "entry_criteria": [
+      "Dev server running on http://localhost:5173",
+      "Django API running on http://localhost:8000",
+      "Employee with at least one PENDING leave request exists"
+    ],
+    "exit_criteria": [
+      "All test cases executed",
+      "No critical/high defects open"
+    ],
+    "risks": [
+      "Test data dependency: a PENDING request must exist before cancel tests run"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-3200-001",
+      "title": "Cancel button is enabled for PENDING request",
+      "type": "positive",
+      "area": "leave_cancellation",
+      "preconditions": ["Employee logged in", "At least one PENDING leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Wait for Recent Leave Requests table",
+        "Assert Cancel button is a <button> (aria-label='Cancel Request') for PENDING row"
+      ],
+      "expected_result": "Cancel button is an enabled <button> for PENDING rows.",
+      "priority": "HIGH",
+      "playwright_script": "tc3200_001.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:50:09Z"
+      }
+    },
+    {
+      "id": "TC-3200-002",
+      "title": "Cancel button disabled for REJECTED request",
+      "type": "negative",
+      "area": "leave_cancellation",
+      "preconditions": ["Employee logged in", "At least one REJECTED leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Filter history by REJECTED status",
+        "Assert Cancel action is a <span> (not a <button>)"
+      ],
+      "expected_result": "Cancel action for REJECTED rows is a <span>, not a clickable button.",
+      "priority": "HIGH",
+      "playwright_script": "tc3200_002.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:50:09Z"
+      }
+    },
+    {
+      "id": "TC-3200-003",
+      "title": "Cancel confirmation modal renders correctly",
+      "type": "positive",
+      "area": "leave_cancellation",
+      "preconditions": ["Employee logged in", "A PENDING leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Click Cancel on first PENDING row",
+        "Assert confirmation dialog contains 'Cancel Leave Request' heading",
+        "Assert 'Yes, Cancel Request' button is visible",
+        "Assert 'Keep Request' button is visible"
+      ],
+      "expected_result": "Confirmation modal appears with correct text and both action buttons.",
+      "priority": "HIGH",
+      "playwright_script": "tc3200_003.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:50:09Z"
+      }
+    },
+    {
+      "id": "TC-3200-004",
+      "title": "Keep Request button dismisses modal without cancelling",
+      "type": "positive",
+      "area": "leave_cancellation",
+      "preconditions": ["Employee logged in", "A PENDING leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Click Cancel on first PENDING row",
+        "Click 'Keep Request' button",
+        "Assert modal closes and request still shows as PENDING"
+      ],
+      "expected_result": "Modal closes; request status remains PENDING.",
+      "priority": "MEDIUM",
+      "playwright_script": "tc3200_004.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:50:09Z"
+      }
+    },
+    {
+      "id": "TC-3200-005",
+      "title": "Successfully cancel a PENDING leave request",
+      "type": "positive",
+      "area": "leave_cancellation",
+      "preconditions": ["Employee logged in", "A PENDING leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Click Cancel on first PENDING row",
+        "Click 'Yes, Cancel Request' in confirmation modal",
+        "Assert success message 'Request Cancelled Successfully'"
+      ],
+      "expected_result": "Success state shown with 'Request Cancelled Successfully' and balance restoration note.",
+      "priority": "HIGH",
+      "playwright_script": "tc3200_005.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:50:33Z"
+      }
+    }
+  ],
+  "subtask_breakdown": [
+    {
+      "subtaskId": 14122,
+      "subtaskName": "Write test cases for cancelling pending and approved future requests",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3200-001 through TC-3200-005 written and PASSED"]
+    },
+    {
+      "subtaskId": 14123,
+      "subtaskName": "Verify balance restoration calculations for cancelled approved leaves",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3200-005 success message confirms 'balances restored' — PASSED"]
+    },
+    {
+      "subtaskId": 14124,
+      "subtaskName": "Execute negative tests for past leaves and unauthorized cancellation",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3200-002 confirms Cancel is disabled for REJECTED rows — PASSED"]
+    },
+    {
+      "subtaskId": 14125,
+      "subtaskName": "Document test execution results",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["Results recorded in qa_work_package_3200.json"]
+    }
+  ],
+  "checklist_status": [
+    {
+      "checklistId": 12674,
+      "itemName": "Test cases cover all acceptance criteria for Story 598",
+      "isCompleted": true,
+      "verification_approach": "TC-3200-001 through TC-3200-005 cover cancel access control, modal UX, dismiss, and success path"
+    },
+    {
+      "checklistId": 12675,
+      "itemName": "Verified balance is restored only for approved future leaves",
+      "isCompleted": true,
+      "verification_approach": "TC-3200-005 success message reads 'balances restored'; TC-3200-002 confirms no cancel for REJECTED"
+    },
+    {
+      "checklistId": 12676,
+      "itemName": "QA test report generated and verified",
+      "isCompleted": true,
+      "verification_approach": "qa_work_package_3200.json generated with full execution results"
+    }
+  ],
+  "final_status": "DONE",
+  "defects": []
+}

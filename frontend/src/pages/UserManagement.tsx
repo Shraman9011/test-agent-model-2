@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { apiClient } from '../api/client';
 import { Modal } from '../components/Modal';
 import { EmployeeCreationForm } from '../components/EmployeeCreationForm';
+import { EmployeeEditForm } from '../components/EmployeeEditForm';
+import { DeactivateEmployeeDialog } from '../components/DeactivateEmployeeDialog';
 import { Toast, ToastType } from '../components/Toast';
-import { UserPlus, Mail, Briefcase, ChevronRight } from 'lucide-react';
+import { UserPlus, Mail, Briefcase, Edit2, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 interface Employee {
   id: number;
@@ -15,14 +17,15 @@ interface Employee {
   user_role: string;
   role: string;
   is_active: boolean;
+  manager: number | null;
 }
-
-import { useCallback } from 'react';
 
 export function UserManagement(): React.JSX.Element {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [deactivatingEmployee, setDeactivatingEmployee] = useState<Employee | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const fetchEmployees = useCallback(async (): Promise<void> => {
@@ -47,9 +50,22 @@ export function UserManagement(): React.JSX.Element {
   };
 
   const handleCreateSuccess = (): void => {
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false);
     showToast('Employee created successfully!', 'success');
-    fetchEmployees(); // Refresh the list
+    fetchEmployees();
+  };
+
+  const handleEditSuccess = (): void => {
+    setEditingEmployee(null);
+    showToast('Employee updated successfully!', 'success');
+    fetchEmployees();
+  };
+
+  const handleDeactivateSuccess = (): void => {
+    const isReactivating = deactivatingEmployee && !deactivatingEmployee.is_active;
+    setDeactivatingEmployee(null);
+    showToast(isReactivating ? 'Employee reactivated successfully!' : 'Employee deactivated successfully!', 'success');
+    fetchEmployees();
   };
 
   return (
@@ -63,7 +79,7 @@ export function UserManagement(): React.JSX.Element {
         </div>
         <div className="mt-4 sm:mt-0">
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <UserPlus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -92,7 +108,7 @@ export function UserManagement(): React.JSX.Element {
                       Status
                     </th>
                     <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Edit</span>
+                      <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -111,10 +127,13 @@ export function UserManagement(): React.JSX.Element {
                     </tr>
                   ) : (
                     employees.map((employee) => (
-                      <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                      <tr 
+                        key={employee.id} 
+                        className={`transition-colors ${employee.is_active ? 'hover:bg-gray-50' : 'bg-gray-50 opacity-60 grayscale'}`}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
+                            <div className={`h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold ${employee.is_active ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-300 text-gray-600'}`}>
                               {employee.first_name[0]}{employee.last_name[0]}
                             </div>
                             <div className="ml-4">
@@ -129,7 +148,7 @@ export function UserManagement(): React.JSX.Element {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
                             {employee.user_role}
                           </span>
                         </td>
@@ -154,10 +173,35 @@ export function UserManagement(): React.JSX.Element {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
-                            Manage
-                            <ChevronRight className="h-4 w-4 ml-1" />
-                          </a>
+                          <div className="flex items-center justify-end space-x-3">
+                            <button 
+                              onClick={() => setEditingEmployee(employee)}
+                              className="text-indigo-600 hover:text-indigo-900 inline-flex items-center focus:outline-none"
+                              aria-label={`Edit ${employee.first_name}`}
+                            >
+                              <Edit2 className="h-4 w-4 mr-1" />
+                              Edit
+                            </button>
+                            {employee.is_active ? (
+                              <button 
+                                onClick={() => setDeactivatingEmployee(employee)}
+                                className="text-red-600 hover:text-red-900 inline-flex items-center focus:outline-none"
+                                aria-label={`Deactivate ${employee.first_name}`}
+                              >
+                                <AlertTriangle className="h-4 w-4 mr-1" />
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => setDeactivatingEmployee(employee)}
+                                className="text-green-600 hover:text-green-900 inline-flex items-center focus:outline-none"
+                                aria-label={`Reactivate ${employee.first_name}`}
+                              >
+                                <ShieldCheck className="h-4 w-4 mr-1" />
+                                Reactivate
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -169,11 +213,31 @@ export function UserManagement(): React.JSX.Element {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
         <EmployeeCreationForm 
           onSuccess={handleCreateSuccess} 
-          onCancel={() => setIsModalOpen(false)} 
+          onCancel={() => setIsCreateModalOpen(false)} 
         />
+      </Modal>
+
+      <Modal isOpen={editingEmployee !== null} onClose={() => setEditingEmployee(null)}>
+        {editingEmployee && (
+          <EmployeeEditForm 
+            employee={editingEmployee}
+            onSuccess={handleEditSuccess} 
+            onCancel={() => setEditingEmployee(null)} 
+          />
+        )}
+      </Modal>
+
+      <Modal isOpen={deactivatingEmployee !== null} onClose={() => setDeactivatingEmployee(null)}>
+        {deactivatingEmployee && (
+          <DeactivateEmployeeDialog 
+            employee={deactivatingEmployee}
+            onSuccess={handleDeactivateSuccess} 
+            onCancel={() => setDeactivatingEmployee(null)} 
+          />
+        )}
       </Modal>
 
       {toast && (

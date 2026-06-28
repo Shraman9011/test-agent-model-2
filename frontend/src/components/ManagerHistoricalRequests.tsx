@@ -3,7 +3,7 @@ import { apiClient } from '../api/client';
 import { AlertCircle, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { PendingLeaveRequest } from './ManagerPendingRequests'; // reusing the type for now
 
-interface HistoricalLeaveRequest extends PendingLeaveRequest {
+interface HistoricalLeaveRequest extends Omit<PendingLeaveRequest, 'status'> {
   status: 'APPROVED' | 'REJECTED';
   reviewed_at: string;
   rejection_reason?: string;
@@ -47,11 +47,11 @@ export function ManagerHistoricalRequests(): React.JSX.Element {
     return () => { isMounted = false; };
   }, [page]);
 
-  const handleNextPage = () => {
+  const handleNextPage = (): void => {
     if (data?.next) setPage(p => p + 1);
   };
 
-  const handlePrevPage = () => {
+  const handlePrevPage = (): void => {
     if (data?.previous) setPage(p => Math.max(1, p - 1));
   };
 
@@ -64,7 +64,7 @@ export function ManagerHistoricalRequests(): React.JSX.Element {
     );
   }
 
-  const renderStatusBadge = (status: string) => {
+  const renderStatusBadge = (status: string): React.JSX.Element => {
     if (status === 'APPROVED') {
       return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Approved</span>;
     }

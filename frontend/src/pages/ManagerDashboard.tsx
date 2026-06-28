@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ManagerPendingRequests } from '../components/ManagerPendingRequests';
+import { ManagerHistoricalRequests } from '../components/ManagerHistoricalRequests';
 
 export function ManagerDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ export function ManagerDashboard(): React.JSX.Element {
       </div>
 
       <ManagerPendingRequests />
+      <ManagerHistoricalRequests />
     </div>
   );
 }

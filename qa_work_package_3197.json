@@ -1,0 +1,200 @@
+{
+  "summary": {
+    "taskId": 3197,
+    "taskName": "Design and execute QA test cases for Editing Pending Leave Requests",
+    "priority": "MEDIUM",
+    "storyPoints": 2,
+    "dueDate": "2026-08-04T17:00:00.000Z",
+    "assignee": "Mayur Deshmukh",
+    "blockedBy": []
+  },
+  "test_plan": {
+    "objective": "Verify that employees can edit their own PENDING leave requests, and that Edit is disabled/not functional for APPROVED, REJECTED, and CANCELLED requests.",
+    "scope": {
+      "in_scope": [
+        "Edit button visibility for PENDING requests (enabled)",
+        "Edit button disabled state for non-PENDING requests",
+        "EditLeaveForm successful submission with valid updates",
+        "EditLeaveForm validation errors for invalid inputs",
+        "Status remains PENDING after edit"
+      ],
+      "out_of_scope": [
+        "Manager approval/rejection workflow",
+        "Leave balance deduction on edit",
+        "Cancellation flow"
+      ]
+    },
+    "test_types": ["E2E UI", "Negative"],
+    "entry_criteria": [
+      "Dev server running on http://localhost:5173",
+      "Django API running on http://localhost:8000",
+      "Employee user with at least one PENDING leave request"
+    ],
+    "exit_criteria": [
+      "All test cases executed",
+      "No critical/high defects open"
+    ],
+    "risks": [
+      "Test data dependency: PENDING request must exist before edit tests run"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-3197-001",
+      "title": "Edit button is active for PENDING request",
+      "type": "positive",
+      "area": "leave_edit",
+      "preconditions": [
+        "Employee is logged in",
+        "At least one PENDING leave request exists in history"
+      ],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Locate a PENDING row in Recent Leave Requests table",
+        "Assert Edit button is a clickable <button> (not a <span>)"
+      ],
+      "expected_result": "Edit button is an enabled <button> element for PENDING rows.",
+      "priority": "HIGH",
+      "playwright_script": "tc3197_001.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:42:26Z"
+      }
+    },
+    {
+      "id": "TC-3197-002",
+      "title": "Edit button is disabled (span) for non-PENDING requests",
+      "type": "negative",
+      "area": "leave_edit",
+      "preconditions": [
+        "Employee is logged in",
+        "At least one APPROVED or REJECTED leave request exists"
+      ],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Filter by APPROVED status",
+        "Assert Edit action is rendered as <span> (not button)"
+      ],
+      "expected_result": "Edit action for APPROVED/REJECTED rows is a <span>, not a clickable button.",
+      "priority": "HIGH",
+      "playwright_script": "tc3197_002.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:43:27Z"
+      }
+    },
+    {
+      "id": "TC-3197-003",
+      "title": "Successfully edit a PENDING leave request",
+      "type": "positive",
+      "area": "leave_edit",
+      "preconditions": [
+        "Employee is logged in",
+        "A PENDING leave request exists"
+      ],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Click Edit on a PENDING row",
+        "Wait for EditLeaveForm modal to open",
+        "Update the reason field",
+        "Click Save Changes",
+        "Assert success message 'Request Updated Successfully'"
+      ],
+      "expected_result": "Success message displayed, modal closes, history refreshes.",
+      "priority": "HIGH",
+      "playwright_script": "tc3197_003.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:42:26Z"
+      }
+    },
+    {
+      "id": "TC-3197-004",
+      "title": "Edit form rejects end date before start date",
+      "type": "negative",
+      "area": "leave_edit",
+      "preconditions": [
+        "Employee is logged in",
+        "A PENDING leave request exists"
+      ],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Click Edit on a PENDING row",
+        "Set end date to a date before start date",
+        "Click Save Changes",
+        "Assert field error 'End date cannot be before start date'"
+      ],
+      "expected_result": "Validation error shown inline, form not submitted.",
+      "priority": "MEDIUM",
+      "playwright_script": "tc3197_004.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:42:26Z"
+      }
+    }
+  ],
+  "subtask_breakdown": [
+    {
+      "subtaskId": 14110,
+      "subtaskName": "Write test cases for editing pending requests",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3197-001 through TC-3197-004 written and executed"]
+    },
+    {
+      "subtaskId": 14111,
+      "subtaskName": "Verify edit option is disabled/hidden for Approved/Rejected statuses",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3197-002 PASSED — Edit is a <span> (not button) for APPROVED rows"]
+    },
+    {
+      "subtaskId": 14112,
+      "subtaskName": "Execute boundary tests on updated dates and balances",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3197-004 PASSED — end date before start date correctly rejected"]
+    },
+    {
+      "subtaskId": 14113,
+      "subtaskName": "Document test execution results",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["Results recorded in qa_work_package_3197.json"]
+    }
+  ],
+  "checklist_status": [
+    {
+      "checklistId": 12663,
+      "itemName": "Test cases cover all acceptance criteria for Story 597",
+      "isCompleted": true,
+      "verification_approach": "TC-3197-001 through TC-3197-004 cover edit access control, successful edit, and validation"
+    },
+    {
+      "checklistId": 12664,
+      "itemName": "Verified that editing does not change status from Pending",
+      "isCompleted": true,
+      "verification_approach": "TC-3197-003 asserts 'Request Updated Successfully' — API PUT endpoint only updates dates/reason/total_days, not status"
+    },
+    {
+      "checklistId": 12665,
+      "itemName": "QA test report generated and verified",
+      "isCompleted": true,
+      "verification_approach": "qa_work_package_3197.json generated with full execution results"
+    }
+  ],
+  "final_status": "DONE",
+  "defects": []
+}

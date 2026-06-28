@@ -287,3 +287,35 @@ class LeaveRequestApproveView(APIView):
             
         serializer = LeaveRequestSerializer(leave_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ManagerHistoricalLeavesView(generics.ListAPIView):
+    """
+    GET /api/v1/manager/leave-requests/history
+    Retrieves historical (approved/rejected) leave requests for the direct reports of the logged-in manager.
+    Supports pagination and filtering by date and employee.
+    """
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [IsManager]
+    pagination_class = LeaveRequestPagination
+
+    def get_queryset(self):
+        queryset = LeaveRequest.objects.filter(
+            manager=self.request.user,
+            status__in=[LeaveRequest.Status.APPROVED, LeaveRequest.Status.REJECTED]
+        ).select_related('leave_type', 'employee').order_by('-reviewed_at', '-start_date')
+
+        # Filtering
+        employee_id = self.request.query_params.get('employee_id')
+        if employee_id:
+            queryset = queryset.filter(employee_id=employee_id)
+            
+        start_date = self.request.query_params.get('start_date')
+        if start_date:
+            queryset = queryset.filter(start_date__gte=start_date)
+            
+        end_date = self.request.query_params.get('end_date')
+        if end_date:
+            queryset = queryset.filter(end_date__lte=end_date)
+            
+        return queryset

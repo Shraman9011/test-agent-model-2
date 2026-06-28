@@ -79,3 +79,15 @@ class ManagerApproveLeaveTests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Only pending requests can be approved.', response.json()['error'])
+
+    def test_approve_email_failure_does_not_block(self):
+        self.client.force_authenticate(user=self.manager)
+        
+        from unittest.mock import patch
+        with patch('leaves.email_utils.send_employee_decision_notification', side_effect=Exception('SMTP Error')):
+            response = self.client.post(self.url, {'comments': 'Enjoy your vacation!'})
+            
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.leave_request.refresh_from_db()
+        self.assertEqual(self.leave_request.status, LeaveRequest.Status.APPROVED)

@@ -26,3 +26,46 @@ class PasswordResetRequestView(APIView):
         
         # If the email format is completely invalid (not a string/email format)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ------------------------------------------------------------------ #
+# Auth & JWT Views                                                     #
+# ------------------------------------------------------------------ #
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from .serializers import CustomTokenObtainPairSerializer
+from django.core.cache import cache
+
+class LoginView(TokenObtainPairView):
+    """
+    POST /api/auth/login
+    Authenticates a user and returns JWT access and refresh tokens.
+    Uses CustomTokenObtainPairSerializer to include user details.
+    """
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout
+    Blacklists the given refresh token and invalidates the session cache in Redis.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Blacklist token (SimpleJWT handles this automatically if BLACKLIST_AFTER_ROTATION is enabled)
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            # Optional: Clear user session data from Redis cache if any exists
+            cache_key = f"user_session_{request.user.id}"
+            cache.delete(cache_key)
+
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

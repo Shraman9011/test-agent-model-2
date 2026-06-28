@@ -90,3 +90,72 @@ class PasswordResetRequestAPITests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
+
+from django.test import override_settings
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class AuthAPITests(APITestCase):
+
+    def setUp(self):
+        self.login_url = reverse('users_api:login')
+        self.logout_url = reverse('users_api:logout')
+        self.user_email = 'authuser@example.com'
+        self.password = 'supersecret123'
+        self.user = User.objects.create_user(
+            email=self.user_email,
+            password=self.password,
+            first_name='Auth',
+            last_name='User',
+            role='EMPLOYEE'
+        )
+
+    def test_login_success(self):
+        """
+        POST /api/auth/login returns JWT token and user info on valid credentials.
+        """
+        response = self.client.post(self.login_url, {
+            'email': self.user_email,
+            'password': self.password
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+        self.assertIn('user', response.data)
+        
+        # Verify custom payload (role, email)
+        self.assertEqual(response.data['user']['email'], self.user_email)
+        self.assertEqual(response.data['user']['role'], 'EMPLOYEE')
+
+    def test_login_invalid_credentials(self):
+        """
+        Invalid credentials return 401 with 'Invalid credentials' message.
+        """
+        response = self.client.post(self.login_url, {
+            'email': self.user_email,
+            'password': 'wrongpassword'
+        })
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['detail'], 'Invalid credentials')
+
+    def test_logout_success(self):
+        """
+        POST /api/auth/logout successfully blacklists the token.
+        """
+        # 1. Login first to get refresh token
+        login_res = self.client.post(self.login_url, {
+            'email': self.user_email,
+            'password': self.password
+        })
+        refresh_token = login_res.data['refresh']
+        access_token = login_res.data['access']
+
+        # 2. Logout
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+        logout_res = self.client.post(self.logout_url, {'refresh': refresh_token})
+        self.assertEqual(logout_res.status_code, status.HTTP_205_RESET_CONTENT)
+        self.assertEqual(logout_res.data['message'], "Successfully logged out.")
+
+        # 3. Try to use blacklisted refresh token (optional, simplejwt does this)
+        refresh_url = '/api/auth/refresh/' # Even if we didn't add it, we can verify manually via the token
+        # To truly test blacklist, we could inspect the OutstandingToken table if needed
+

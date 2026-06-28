@@ -57,3 +57,41 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             recipient_list=[user.email],
             fail_silently=False,
         )
+
+# ------------------------------------------------------------------ #
+# Auth & JWT Serializers                                               #
+# ------------------------------------------------------------------ #
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom JWT serializer that adds user role and email to the token payload,
+    and returns standard user info along with the token in the response.
+    """
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        token['email'] = user.email
+        token['role'] = user.role
+        return token
+
+    def validate(self, attrs):
+        from rest_framework_simplejwt.exceptions import AuthenticationFailed as JWTAuthFailed
+        from rest_framework.exceptions import AuthenticationFailed
+        try:
+            data = super().validate(attrs)
+        except Exception as e:
+            # We catch any Exception here just to intercept the specific 'no_active_account' error
+            # SimpleJWT might raise a few different types of AuthenticationFailed
+            raise AuthenticationFailed("Invalid credentials")
+            
+        data['user'] = {
+            'id': self.user.id,
+            'email': self.user.email,
+            'firstName': self.user.first_name,
+            'lastName': self.user.last_name,
+            'role': self.user.role,
+        }
+        return data

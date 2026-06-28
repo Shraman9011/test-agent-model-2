@@ -109,3 +109,12 @@ class EmployeeProfileViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeProfileSerializer
     permission_classes = [IsHRAdmin]
 
+    def perform_destroy(self, instance):
+        """Soft delete the profile and the associated user."""
+        instance.is_active = False
+        instance.save()
+        
+        user = instance.user
+        user.is_active = False
+        user.save()
+

@@ -357,20 +357,18 @@ class EmployeeProfileTests(TestCase):
             password='Password123!',
             role=UserRole.EMPLOYEE
         )
-        self.manager_profile = EmployeeProfile.objects.create(
-            user=self.manager_user,
-            role='Engineering Lead',
-            is_active=True
-        )
+        self.manager_profile = self.manager_user.profile
+        self.manager_profile.role = 'Engineering Lead'
+        self.manager_profile.is_active = True
+        self.manager_profile.save()
 
     def test_employee_profile_creation(self):
         """Test creating an employee profile with a self-referential manager."""
-        employee_profile = EmployeeProfile.objects.create(
-            user=self.employee_user,
-            role='Software Engineer',
-            manager=self.manager_profile,
-            is_active=True
-        )
+        employee_profile = self.employee_user.profile
+        employee_profile.role = 'Software Engineer'
+        employee_profile.manager = self.manager_profile
+        employee_profile.is_active = True
+        employee_profile.save()
 
         self.assertEqual(employee_profile.user, self.employee_user)
         self.assertEqual(employee_profile.role, 'Software Engineer')
@@ -380,7 +378,5 @@ class EmployeeProfileTests(TestCase):
 
     def test_employee_profile_default_active(self):
         """Test that active status defaults to True."""
-        employee_profile = EmployeeProfile.objects.create(
-            user=self.employee_user,
-        )
+        employee_profile = self.employee_user.profile
         self.assertTrue(employee_profile.is_active)

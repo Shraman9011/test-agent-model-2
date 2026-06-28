@@ -5,7 +5,7 @@ from .views import PasswordResetRequestView, PasswordResetConfirmView, LoginView
 app_name = 'users_api'
 
 router = DefaultRouter()
-router.register(r'profiles', EmployeeProfileViewSet, basename='employee-profile')
+router.register(r'employees', EmployeeProfileViewSet, basename='employees')
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='login'),

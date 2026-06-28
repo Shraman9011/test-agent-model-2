@@ -161,7 +161,86 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 from users.models import EmployeeProfile
 
 class EmployeeProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for employee profiles.
+    Handles nested reading and writing of the associated User model.
+    """
+    email = serializers.EmailField(source='user.email')
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    department = serializers.CharField(source='user.department', required=False, allow_blank=True)
+    phone_number = serializers.CharField(source='user.phone_number', required=False, allow_blank=True)
+    user_role = serializers.ChoiceField(source='user.role', choices=['EMPLOYEE', 'MANAGER', 'HR_ADMIN'])
+    password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
+
     class Meta:
         model = EmployeeProfile
-        fields = '__all__'
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'department', 
+            'phone_number', 'user_role', 'password', 'role', 
+            'manager', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    from django.db import transaction
+    
+    @transaction.atomic
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')
+        password = validated_data.pop('password', 'Password123!') # Default password
+        
+        # Create user
+        user = User.objects.create_user(
+            email=user_data['email'],
+            password=password,
+            first_name=user_data.get('first_name', ''),
+            last_name=user_data.get('last_name', ''),
+            department=user_data.get('department', ''),
+            phone_number=user_data.get('phone_number', ''),
+            role=user_data.get('role', 'EMPLOYEE')
+        )
+        
+        # The EmployeeProfile is automatically created by the post_save signal
+        profile = user.profile
+        
+        # Update profile fields
+        profile.role = validated_data.get('role', '')
+        profile.manager = validated_data.get('manager')
+        profile.is_active = validated_data.get('is_active', True)
+        profile.save()
+        
+        return profile
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        password = validated_data.pop('password', None)
+        
+        # Update user fields
+        user = instance.user
+        if 'email' in user_data:
+            user.email = user_data['email']
+        if 'first_name' in user_data:
+            user.first_name = user_data['first_name']
+        if 'last_name' in user_data:
+            user.last_name = user_data['last_name']
+        if 'department' in user_data:
+            user.department = user_data['department']
+        if 'phone_number' in user_data:
+            user.phone_number = user_data['phone_number']
+        if 'role' in user_data:
+            user.role = user_data['role']
+            
+        if password:
+            user.set_password(password)
+            
+        user.save()
+        
+        # Update profile fields
+        instance.role = validated_data.get('role', instance.role)
+        instance.manager = validated_data.get('manager', instance.manager)
+        instance.is_active = validated_data.get('is_active', instance.is_active)
+        instance.save()
+        
+        return instance
 

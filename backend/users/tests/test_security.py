@@ -63,7 +63,7 @@ class SecurityIntegrationTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         
         # Attempt to access profile CRUD endpoint
-        response = self.client.get(reverse('users_api:employee-profile-list'))
+        response = self.client.get(reverse('users_api:employees-list'))
         
         # Should be forbidden
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -79,7 +79,7 @@ class SecurityIntegrationTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         
         # Attempt to access profile CRUD endpoint
-        response = self.client.get(reverse('users_api:employee-profile-list'))
+        response = self.client.get(reverse('users_api:employees-list'))
         
         # Should be allowed (200 OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Modal } from './Modal';
+import { ApproveLeaveConfirmation } from './ApproveLeaveConfirmation';
+import { RejectLeaveConfirmation } from './RejectLeaveConfirmation';
 
 export interface PendingLeaveRequest {
   id: number;
@@ -23,6 +26,25 @@ export function ManagerPendingRequests(): React.JSX.Element {
   const [requests, setRequests] = useState<PendingLeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<PendingLeaveRequest | null>(null);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
+  const handleApproveSuccess = (): void => {
+    if (selectedRequest) {
+      setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+      setIsApproveModalOpen(false);
+      setSelectedRequest(null);
+    }
+  };
+
+  const handleRejectSuccess = (): void => {
+    if (selectedRequest) {
+      setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+      setIsRejectModalOpen(false);
+      setSelectedRequest(null);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -120,6 +142,10 @@ export function ManagerPendingRequests(): React.JSX.Element {
               <div className="flex space-x-3 mt-4 sm:mt-0 self-end sm:self-auto shrink-0">
                 <button
                   type="button"
+                  onClick={() => {
+                    setSelectedRequest(req);
+                    setIsRejectModalOpen(true);
+                  }}
                   className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   aria-label={`Reject request from ${req.employee.first_name}`}
                 >
@@ -128,6 +154,10 @@ export function ManagerPendingRequests(): React.JSX.Element {
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    setSelectedRequest(req);
+                    setIsApproveModalOpen(true);
+                  }}
                   className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   aria-label={`Approve request from ${req.employee.first_name}`}
                 >
@@ -139,6 +169,26 @@ export function ManagerPendingRequests(): React.JSX.Element {
           ))}
         </div>
       )}
+
+      <Modal isOpen={isApproveModalOpen} onClose={() => { setIsApproveModalOpen(false); setSelectedRequest(null); }}>
+        {selectedRequest && (
+          <ApproveLeaveConfirmation
+            leaveRequest={selectedRequest}
+            onSuccess={handleApproveSuccess}
+            onCancel={() => { setIsApproveModalOpen(false); setSelectedRequest(null); }}
+          />
+        )}
+      </Modal>
+
+      <Modal isOpen={isRejectModalOpen} onClose={() => { setIsRejectModalOpen(false); setSelectedRequest(null); }}>
+        {selectedRequest && (
+          <RejectLeaveConfirmation
+            leaveRequest={selectedRequest}
+            onSuccess={handleRejectSuccess}
+            onCancel={() => { setIsRejectModalOpen(false); setSelectedRequest(null); }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

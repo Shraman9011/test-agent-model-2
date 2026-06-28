@@ -25,13 +25,13 @@ export function LeaveBalanceAdjustmentForm({ employeeId, onSuccess }: LeaveBalan
   useEffect(() => {
     const fetchLeaveTypes = async (): Promise<void> => {
       try {
-        const response = await apiClient.get('/api/v1/leave-policies/');
+        const response = await apiClient.get('/api/v1/leave-policies/') as { data: { is_active: boolean; leave_type: number; leave_type_name: string }[] };
         // We extract leave types from active policies
         const activeTypes = response.data
-          .filter((p: { is_active: boolean }) => p.is_active)
-          .map((p: { leave_type: { id: number; name: string } }) => ({
-            id: p.leave_type.id,
-            name: p.leave_type.name
+          .filter((p) => p.is_active)
+          .map((p) => ({
+            id: p.leave_type,
+            name: p.leave_type_name
           }));
         setLeaveTypes(activeTypes);
         if (activeTypes.length > 0) {

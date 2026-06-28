@@ -47,3 +47,14 @@ export const getLeaveAdjustmentLogs = async (employeeId: number): Promise<unknow
   const response = await apiClient.get('/api/v1/leave-balances/adjustments/logs/', { params: { employee_id: employeeId } });
   return response.data;
 };
+
+// Leave Policy API
+export const getLeavePolicies = async (): Promise<unknown> => {
+  const response = await apiClient.get('/api/v1/leave-policies/');
+  return response.data;
+};
+
+export const updateLeavePolicy = async (id: number, data: { default_annual_days: number; apply_retroactively: boolean; is_active?: boolean }): Promise<unknown> => {
+  const response = await apiClient.patch(`/api/v1/leave-policies/${id}/`, data);
+  return response.data;
+};

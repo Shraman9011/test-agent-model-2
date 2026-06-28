@@ -205,10 +205,11 @@ from leaves.models import LeavePolicy
 
 class LeavePolicySerializer(serializers.ModelSerializer):
     apply_retroactively = serializers.BooleanField(write_only=True, required=False, default=False)
+    leave_type_name = serializers.CharField(source='leave_type.name', read_only=True)
     
     class Meta:
         model = LeavePolicy
-        fields = ['id', 'leave_type', 'default_annual_days', 'is_active', 'created_at', 'updated_at', 'apply_retroactively']
+        fields = ['id', 'leave_type', 'leave_type_name', 'default_annual_days', 'is_active', 'created_at', 'updated_at', 'apply_retroactively']
         read_only_fields = ['id', 'leave_type', 'created_at', 'updated_at']
 
     def update(self, instance, validated_data):

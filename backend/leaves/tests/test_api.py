@@ -452,3 +452,99 @@ class LeaveRequestUpdateAPITests(APITestCase):
         response = self.client.put(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Requested days exceed available leave balance.", str(response.data))
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class LeaveRequestCancelAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='cancel_tester@example.com',
+            password='Password123!'
+        )
+        self.other_user = User.objects.create_user(
+            email='other_cancel_tester@example.com',
+            password='Password123!'
+        )
+        self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
+        self.current_year = date.today().year
+        
+        self.balance = LeaveBalance.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            year=self.current_year,
+            allocated_days=Decimal('20.0'),
+            used_days=Decimal('5.0'),
+            pending_days=Decimal('4.0')
+        )
+        
+        from leaves.models import LeaveRequest
+        import datetime
+        future_date = date.today() + datetime.timedelta(days=10)
+        past_date = date.today() - datetime.timedelta(days=10)
+        
+        self.pending_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=future_date,
+            end_date=future_date + datetime.timedelta(days=1),
+            total_days=2,
+            status=LeaveRequest.Status.PENDING
+        )
+        
+        self.approved_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=future_date + datetime.timedelta(days=5),
+            end_date=future_date + datetime.timedelta(days=6),
+            total_days=2,
+            status=LeaveRequest.Status.APPROVED
+        )
+        
+        self.past_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=past_date,
+            end_date=past_date + datetime.timedelta(days=1),
+            total_days=2,
+            status=LeaveRequest.Status.APPROVED
+        )
+
+    def test_cancel_pending_leave_restores_pending_days(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-cancel', kwargs={'pk': self.pending_req.pk})
+        
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.pending_req.refresh_from_db()
+        self.assertEqual(self.pending_req.status, 'CANCELLED')
+        
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.pending_days, Decimal('2.0')) # 4.0 - 2.0 = 2.0
+
+    def test_cancel_approved_leave_restores_used_days(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-cancel', kwargs={'pk': self.approved_req.pk})
+        
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.approved_req.refresh_from_db()
+        self.assertEqual(self.approved_req.status, 'CANCELLED')
+        
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.used_days, Decimal('3.0')) # 5.0 - 2.0 = 3.0
+
+    def test_cancel_past_leave_error(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-cancel', kwargs={'pk': self.past_req.pk})
+        
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cannot cancel past leaves.", str(response.data))
+
+    def test_cancel_leave_not_owner_forbidden(self):
+        self.client.force_authenticate(user=self.other_user)
+        url = reverse('leaves_api:leave-cancel', kwargs={'pk': self.pending_req.pk})
+        
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

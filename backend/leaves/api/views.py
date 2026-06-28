@@ -128,3 +128,56 @@ class LeaveRequestUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwner]
 
 
+from rest_framework.views import APIView
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from decimal import Decimal
+
+class LeaveRequestCancelView(APIView):
+    """
+    POST /api/leaves/{id}/cancel/
+    Cancel a leave request.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    
+    def post(self, request, pk, format=None):
+        leave_request = get_object_or_404(LeaveRequest, pk=pk)
+        
+        self.check_object_permissions(request, leave_request)
+        
+        if leave_request.start_date < date.today():
+            return Response({"error": "Cannot cancel past leaves."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if leave_request.status == LeaveRequest.Status.CANCELLED:
+            return Response({"error": "Request is already cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        with transaction.atomic():
+            try:
+                balance = LeaveBalance.objects.select_for_update().get(
+                    employee=leave_request.employee,
+                    leave_type=leave_request.leave_type,
+                    year=date.today().year
+                )
+            except LeaveBalance.DoesNotExist:
+                return Response({"error": "Leave balance not found."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            if leave_request.status == LeaveRequest.Status.APPROVED:
+                balance.used_days -= Decimal(str(leave_request.total_days))
+                if balance.used_days < 0:
+                    balance.used_days = Decimal('0.0')
+                balance.save()
+            elif leave_request.status == LeaveRequest.Status.PENDING:
+                balance.pending_days -= Decimal(str(leave_request.total_days))
+                if balance.pending_days < 0:
+                    balance.pending_days = Decimal('0.0')
+                balance.save()
+            elif leave_request.status == LeaveRequest.Status.REJECTED:
+                pass # Nothing to restore, balance already didn't include it
+            
+            leave_request.status = LeaveRequest.Status.CANCELLED
+            leave_request.save()
+            
+        return Response({"status": "cancelled", "message": "Leave request cancelled successfully."}, status=status.HTTP_200_OK)
+
+

@@ -163,3 +163,23 @@ class LeaveBalance(models.Model):
     def remaining_days(self):
         """Available days = allocated − used − pending."""
         return self.allocated_days - self.used_days - self.pending_days
+
+class Holiday(models.Model):
+    """Official company holidays (non-working days)."""
+    name = models.CharField(max_length=100)
+    date = models.DateField(unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'leaves_holiday'
+        ordering = ['date']
+        indexes = [
+            models.Index(fields=['date'], name='idx_holiday_date'),
+        ]
+        verbose_name = 'Company Holiday'
+        verbose_name_plural = 'Company Holidays'
+
+    def __str__(self):
+        return f"{self.name} ({self.date})"

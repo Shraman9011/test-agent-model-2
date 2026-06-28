@@ -54,7 +54,7 @@ from datetime import date
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveRequest
-        fields = ['leave_type', 'start_date', 'end_date', 'reason', 'total_days']
+        fields = ['leave_type', 'start_date', 'end_date', 'reason', 'total_days', 'manager']
         
     def validate(self, data):
         start_date = data.get('start_date')
@@ -122,6 +122,15 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             )
             balance.pending_days += Decimal(str(total_days))
             balance.save()
+            
+        # Send manager notification
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            from leaves.email_utils import send_manager_notification
+            send_manager_notification(instance)
+        except Exception as e:
+            logger.error(f"Failed to send manager notification email: {e}")
             
         return instance
 

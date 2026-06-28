@@ -1,12 +1,51 @@
-import React from 'react'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { PostLoginRedirect } from './components/PostLoginRedirect';
+import { DashboardLayout } from './layouts/DashboardLayout';
 
-function App() {
+// Pages
+import { LoginPage } from './pages/LoginPage';
+import { EmployeeDashboard } from './pages/EmployeeDashboard';
+import { ManagerDashboard } from './pages/ManagerDashboard';
+import { AdminDashboard } from './pages/AdminDashboard';
+
+function App(): React.JSX.Element {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Welcome to Test Agent Model 2</h1>
-      <p className="text-lg">This is the frontend application.</p>
-    </div>
-  )
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Root redirect handles routing after login based on role */}
+          <Route path="/" element={<PostLoginRedirect />} />
+
+          {/* Authenticated Dashboard Routes */}
+          <Route element={<DashboardLayout />}>
+            {/* Employee routes */}
+            <Route element={<ProtectedRoute allowedRoles={['EMPLOYEE']} />}>
+              <Route path="/dashboard/employee" element={<EmployeeDashboard />} />
+            </Route>
+
+            {/* Manager routes */}
+            <Route element={<ProtectedRoute allowedRoles={['MANAGER']} />}>
+              <Route path="/dashboard/manager" element={<ManagerDashboard />} />
+            </Route>
+
+            {/* Admin routes */}
+            <Route element={<ProtectedRoute allowedRoles={['HR_ADMIN']} />}>
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+            </Route>
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;

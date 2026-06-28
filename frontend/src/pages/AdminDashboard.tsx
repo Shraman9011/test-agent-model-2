@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 export function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ export function AdminDashboard(): React.JSX.Element {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-indigo-500">
           <h3 className="text-lg font-medium text-gray-900 mb-1">User Management</h3>
           <p className="text-sm text-gray-500 mb-4">Add, edit, or disable employee accounts and assign roles.</p>
-          <button className="text-indigo-600 text-sm font-medium hover:text-indigo-800">Manage Users &rarr;</button>
+          <Link to="/dashboard/admin/users" className="text-indigo-600 text-sm font-medium hover:text-indigo-800">Manage Users &rarr;</Link>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-indigo-500">

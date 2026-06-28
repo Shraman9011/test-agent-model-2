@@ -13,6 +13,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { AccessDeniedPage } from './pages/AccessDeniedPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { UserManagement } from './pages/UserManagement';
 
 function App(): React.JSX.Element {
   return (
@@ -44,6 +45,7 @@ function App(): React.JSX.Element {
             {/* Admin routes */}
             <Route element={<ProtectedRoute allowedRoles={['HR_ADMIN']} />}>
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/admin/users" element={<UserManagement />} />
             </Route>
           </Route>
 

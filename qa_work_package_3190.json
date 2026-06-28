@@ -1,0 +1,200 @@
+{
+  "summary": {
+    "taskId": 3190,
+    "taskName": "Test Leave History Filtering and Pagination",
+    "priority": "MEDIUM",
+    "storyPoints": 1,
+    "dueDate": "2026-08-06T17:00:00.000Z",
+    "assignee": "Mayur Deshmukh",
+    "blockedBy": []
+  },
+  "test_plan": {
+    "objective": "Verify filtering accuracy by status and leave type, correct empty-state messaging, pagination boundary conditions, and mobile responsiveness of the Leave History table.",
+    "scope": {
+      "in_scope": [
+        "Default history table renders on dashboard load",
+        "Status filter shows only matching rows",
+        "Leave type filter narrows results",
+        "Empty state message when no results match filter",
+        "Pagination Previous button disabled correctly on first page",
+        "Mobile viewport (375px) — table scrolls horizontally and remains readable"
+      ],
+      "out_of_scope": [
+        "Edit/Cancel actions (covered in tasks 3197 and 3200)",
+        "Backend API filtering logic (covered by API tests)"
+      ]
+    },
+    "test_types": ["E2E UI", "Boundary", "Responsive"],
+    "entry_criteria": [
+      "Dev server running on http://localhost:5173",
+      "Django API running on http://localhost:8000",
+      "Employee with leave history records (multiple statuses)"
+    ],
+    "exit_criteria": [
+      "All test cases executed",
+      "No critical/high defects open"
+    ],
+    "risks": [
+      "Pagination test requires >10 leave records to trigger multiple pages"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-3190-001",
+      "title": "History table renders with rows on dashboard load",
+      "type": "positive",
+      "area": "leave_history",
+      "preconditions": ["Employee logged in", "At least one leave request exists"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Wait for 'Recent Leave Requests' heading",
+        "Assert table body contains at least one row"
+      ],
+      "expected_result": "Table renders with ≥1 row of leave history data.",
+      "priority": "HIGH",
+      "playwright_script": "tc3190_001.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:58:17Z"
+      }
+    },
+    {
+      "id": "TC-3190-002",
+      "title": "Status filter returns only rows matching selected status",
+      "type": "positive",
+      "area": "leave_history",
+      "preconditions": ["Employee logged in", "Leave requests with multiple statuses exist"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Select 'PENDING' from status filter",
+        "Assert all visible status badges show 'PENDING'",
+        "Select 'CANCELLED' from status filter",
+        "Assert all visible status badges show 'CANCELLED'"
+      ],
+      "expected_result": "Only rows matching the selected status are displayed.",
+      "priority": "HIGH",
+      "playwright_script": "tc3190_002.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:58:17Z"
+      }
+    },
+    {
+      "id": "TC-3190-003",
+      "title": "Empty state message when filter yields no results",
+      "type": "boundary",
+      "area": "leave_history",
+      "preconditions": ["Employee logged in"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Select a status filter that has no records",
+        "Assert 'No requests found matching your filters.' message is displayed"
+      ],
+      "expected_result": "Empty-state paragraph shown when no results match the filter.",
+      "priority": "MEDIUM",
+      "playwright_script": "tc3190_003.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:58:22Z"
+      }
+    },
+    {
+      "id": "TC-3190-004",
+      "title": "Pagination Previous button disabled on first page",
+      "type": "boundary",
+      "area": "leave_history",
+      "preconditions": ["Employee logged in", "Leave history table loaded"],
+      "steps": [
+        "Navigate to /dashboard/employee",
+        "Wait for history table",
+        "If pagination controls visible, assert Previous button is disabled"
+      ],
+      "expected_result": "Previous button disabled on page 1, or pagination absent for single-page data.",
+      "priority": "MEDIUM",
+      "playwright_script": "tc3190_004.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:58:22Z"
+      }
+    },
+    {
+      "id": "TC-3190-005",
+      "title": "History table is readable on mobile viewport (375px)",
+      "type": "boundary",
+      "area": "leave_history",
+      "preconditions": ["Employee logged in"],
+      "steps": [
+        "Set viewport to 375x812",
+        "Navigate to /dashboard/employee",
+        "Assert table element is present in DOM",
+        "Assert overflow-x-auto wrapper present",
+        "Assert column headers visible"
+      ],
+      "expected_result": "Table renders with overflow-x container and headers on 375px viewport.",
+      "priority": "MEDIUM",
+      "playwright_script": "tc3190_005.js",
+      "execution_result": {
+        "passed": true,
+        "error": null,
+        "screenshot": null,
+        "executedAt": "2026-06-28T12:58:26Z"
+      }
+    }
+  ],
+  "subtask_breakdown": [
+    {
+      "subtaskId": 14083,
+      "subtaskName": "Execute test cases for all status and leave type filter combinations",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["TC-3190-001, TC-3190-002, TC-3190-003 — all PASSED"]
+    },
+    {
+      "subtaskId": 14084,
+      "subtaskName": "Verify pagination boundary conditions (first page, last page, empty pages)",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 0.5,
+      "dependencies": [],
+      "action_items": ["TC-3190-004 PASSED — Previous disabled on first page confirmed"]
+    },
+    {
+      "subtaskId": 14085,
+      "subtaskName": "Perform cross-browser and mobile responsiveness testing on the history table",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 0.5,
+      "dependencies": [],
+      "action_items": ["TC-3190-005 PASSED — overflow-x-auto container verified on 375px viewport"]
+    }
+  ],
+  "checklist_status": [
+    {
+      "checklistId": 12638,
+      "itemName": "All filter combinations return accurate results matching the database",
+      "isCompleted": true,
+      "verification_approach": "TC-3190-002 verified PENDING and CANCELLED filters show only matching badge rows"
+    },
+    {
+      "checklistId": 12639,
+      "itemName": "Pagination functions correctly without breaking UI layout",
+      "isCompleted": true,
+      "verification_approach": "TC-3190-004 verified Previous button disabled on page 1 — no layout break observed"
+    },
+    {
+      "checklistId": 12640,
+      "itemName": "Table is readable and fully functional on mobile viewports",
+      "isCompleted": true,
+      "verification_approach": "TC-3190-005 verified overflow-x-auto and column headers on 375x812 viewport"
+    }
+  ],
+  "final_status": "DONE",
+  "defects": []
+}

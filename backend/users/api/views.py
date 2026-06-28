@@ -92,3 +92,20 @@ class LogoutView(APIView):
             return Response({"message": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# ------------------------------------------------------------------ #
+# Employee Profile Views                                               #
+# ------------------------------------------------------------------ #
+from rest_framework import viewsets
+from users.models import EmployeeProfile
+from users.permissions import IsHRAdmin
+from .serializers import EmployeeProfileSerializer
+
+class EmployeeProfileViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for employee profiles. Only accessible by HR Administrators.
+    """
+    queryset = EmployeeProfile.objects.all()
+    serializer_class = EmployeeProfileSerializer
+    permission_classes = [IsHRAdmin]
+

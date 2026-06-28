@@ -128,11 +128,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         from rest_framework_simplejwt.exceptions import AuthenticationFailed as JWTAuthFailed
         from rest_framework.exceptions import AuthenticationFailed
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        email = attrs.get(User.USERNAME_FIELD)
+        try:
+            user = User.objects.get(email=email)
+            if not user.is_active:
+                raise AuthenticationFailed("Account is deactivated.")
+            if hasattr(user, 'profile') and not user.profile.is_active:
+                raise AuthenticationFailed("Account is deactivated.")
+        except User.DoesNotExist:
+            pass # Let super().validate handle the invalid credentials
+            
         try:
             data = super().validate(attrs)
         except Exception as e:
-            # We catch any Exception here just to intercept the specific 'no_active_account' error
-            # SimpleJWT might raise a few different types of AuthenticationFailed
             raise AuthenticationFailed("Invalid credentials")
             
         data['user'] = {
@@ -143,3 +154,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'role': self.user.role,
         }
         return data
+
+# ------------------------------------------------------------------ #
+# Profile Serializers                                                  #
+# ------------------------------------------------------------------ #
+from users.models import EmployeeProfile
+
+class EmployeeProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeProfile
+        fields = '__all__'
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Leave Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f5; color: #333333;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f5; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #4f46e5; padding: 20px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">New Leave Request</h1>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                                Hello {{ manager_name }},
+                            </p>
+                            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                                <strong>{{ employee_name }}</strong> has submitted a new leave request that requires your approval.
+                            </p>
+                            
+                            <table width="100%" cellpadding="10" cellspacing="0" border="0" style="background-color: #f9fafb; border-radius: 4px; margin-bottom: 20px;">
+                                <tr>
+                                    <td width="30%" style="font-weight: bold; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Leave Type</td>
+                                    <td width="70%" style="color: #111827; border-bottom: 1px solid #e5e7eb;">{{ leave_type }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Start Date</td>
+                                    <td style="color: #111827; border-bottom: 1px solid #e5e7eb;">{{ start_date }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #4b5563; border-bottom: 1px solid #e5e7eb;">End Date</td>
+                                    <td style="color: #111827; border-bottom: 1px solid #e5e7eb;">{{ end_date }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Total Days</td>
+                                    <td style="color: #111827; border-bottom: 1px solid #e5e7eb;">{{ total_days }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #4b5563;">Reason</td>
+                                    <td style="color: #111827;">{{ reason|default:"N/A" }}</td>
+                                </tr>
+                            </table>
+
+                            <div style="text-align: center; margin-top: 30px;">
+                                <a href="{{ approval_link }}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                                    Review Request
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 12px; color: #6b7280; margin: 0;">
+                                This is an automated message from LeaveSync. Please do not reply directly to this email.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

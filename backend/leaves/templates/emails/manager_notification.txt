@@ -1,0 +1,16 @@
+Hello {{ manager_name }},
+
+{{ employee_name }} has submitted a new leave request that requires your approval.
+
+Leave Details:
+- Leave Type: {{ leave_type }}
+- Start Date: {{ start_date }}
+- End Date:   {{ end_date }}
+- Total Days: {{ total_days }}
+- Reason:     {{ reason|default:"N/A" }}
+
+Please review the request by visiting the following link:
+{{ approval_link }}
+
+Thank you,
+The LeaveSync Team

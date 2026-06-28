@@ -319,3 +319,72 @@ class ManagerHistoricalLeavesView(generics.ListAPIView):
             queryset = queryset.filter(end_date__lte=end_date)
             
         return queryset
+
+class LeaveRequestRejectView(APIView):
+    """
+    POST /api/v1/manager/leave-requests/{id}/reject
+    Reject a pending leave request. Requires a rejection reason.
+    """
+    permission_classes = [IsManager]
+
+    def post(self, request, pk, format=None):
+        leave_request = get_object_or_404(LeaveRequest, pk=pk)
+        
+        # Ensure the user is the assigned manager
+        if leave_request.manager != request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You are not authorized to reject this request.")
+            
+        if leave_request.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {"error": "Only pending requests can be rejected."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        reason = request.data.get('rejection_reason', '')
+        if isinstance(reason, str):
+            reason = reason.strip()
+            
+        if not reason:
+            return Response(
+                {"error": "Rejection reason is required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        with transaction.atomic():
+            try:
+                balance = LeaveBalance.objects.select_for_update().get(
+                    employee=leave_request.employee,
+                    leave_type=leave_request.leave_type,
+                    year=date.today().year
+                )
+            except LeaveBalance.DoesNotExist:
+                return Response({"error": "Leave balance not found."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Remove days from pending
+            balance.pending_days -= Decimal(str(leave_request.total_days))
+            if balance.pending_days < 0:
+                balance.pending_days = Decimal('0.0')
+            balance.save()
+            
+            leave_request.status = LeaveRequest.Status.REJECTED
+            leave_request.rejection_reason = reason
+            leave_request.reviewed_at = timezone.now()
+            leave_request.save()
+            
+            # Invalidate manager pending leaves cache
+            cache_key = f"manager_pending_leaves_{request.user.id}"
+            try:
+                cache.delete(cache_key)
+            except Exception:
+                pass
+            
+            # Send notification
+            try:
+                from leaves.email_utils import send_employee_decision_notification
+                send_employee_decision_notification(leave_request)
+            except Exception as e:
+                logger.error(f"Failed to send decision notification email: {e}")
+            
+        serializer = LeaveRequestSerializer(leave_request)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     LeaveBalanceListView, HolidayListView, LeaveRequestHistoryView,
     LeaveRequestCreateView, LeaveRequestUpdateView, LeaveRequestCancelView,
-    ManagerPendingLeavesView, LeaveRequestApproveView, ManagerHistoricalLeavesView
+    ManagerPendingLeavesView, LeaveRequestApproveView, ManagerHistoricalLeavesView,
+    LeaveRequestRejectView
 )
 
 app_name = 'leaves_api'
@@ -16,5 +17,6 @@ urlpatterns = [
     path('holidays', HolidayListView.as_view(), name='holidays'),
     path('v1/manager/leave-requests/pending', ManagerPendingLeavesView.as_view(), name='manager-pending-leaves'),
     path('v1/manager/leave-requests/<int:pk>/approve', LeaveRequestApproveView.as_view(), name='manager-approve-leave'),
+    path('v1/manager/leave-requests/<int:pk>/reject', LeaveRequestRejectView.as_view(), name='manager-reject-leave'),
     path('v1/manager/leave-requests/history', ManagerHistoricalLeavesView.as_view(), name='manager-historical-leaves'),
 ]

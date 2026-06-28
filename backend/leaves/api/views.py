@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from leaves.models import LeaveBalance, Holiday, LeaveRequest
 from .serializers import (
     LeaveBalanceSerializer, HolidaySerializer, LeaveRequestSerializer,
-    LeaveRequestCreateSerializer
+    LeaveRequestCreateSerializer, LeaveRequestUpdateSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -111,4 +111,20 @@ class LeaveRequestCreateView(generics.CreateAPIView):
     """
     serializer_class = LeaveRequestCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+from rest_framework.exceptions import PermissionDenied
+
+class IsOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.employee == request.user
+
+class LeaveRequestUpdateView(generics.UpdateAPIView):
+    """
+    PUT /api/leaves/{id}/
+    Edit a pending leave request.
+    """
+    queryset = LeaveRequest.objects.all()
+    serializer_class = LeaveRequestUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
 

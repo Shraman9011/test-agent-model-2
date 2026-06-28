@@ -124,3 +124,71 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             balance.save()
             
         return instance
+
+class LeaveRequestUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveRequest
+        fields = ['start_date', 'end_date', 'reason', 'total_days']
+        
+    def validate(self, data):
+        if self.instance.status != LeaveRequest.Status.PENDING:
+            raise serializers.ValidationError("Only pending requests can be modified.")
+            
+        start_date = data.get('start_date', self.instance.start_date)
+        end_date = data.get('end_date', self.instance.end_date)
+        total_days = data.get('total_days', self.instance.total_days)
+        employee = self.instance.employee
+        leave_type = self.instance.leave_type
+        
+        if start_date > end_date:
+            raise serializers.ValidationError({"end_date": "End date must be after start date."})
+            
+        if total_days <= 0:
+            raise serializers.ValidationError({"total_days": "Total days must be positive."})
+            
+        overlapping = LeaveRequest.objects.filter(
+            employee=employee,
+            status__in=[LeaveRequest.Status.PENDING, LeaveRequest.Status.APPROVED],
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        ).exclude(pk=self.instance.pk)
+        
+        if overlapping.exists():
+            raise serializers.ValidationError("Requested dates overlap with an existing leave request.")
+            
+        days_diff = total_days - self.instance.total_days
+        if days_diff > 0:
+            current_year = date.today().year
+            try:
+                balance = LeaveBalance.objects.get(
+                    employee=employee,
+                    leave_type=leave_type,
+                    year=current_year
+                )
+                if balance.remaining_days < days_diff:
+                    raise serializers.ValidationError("Requested days exceed available leave balance.")
+            except LeaveBalance.DoesNotExist:
+                raise serializers.ValidationError("Leave balance not found.")
+                
+        return data
+
+    def update(self, instance, validated_data):
+        old_total_days = instance.total_days
+        new_total_days = validated_data.get('total_days', old_total_days)
+        days_diff = new_total_days - old_total_days
+        
+        from django.db import transaction
+        from decimal import Decimal
+        
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if days_diff != 0:
+                balance = LeaveBalance.objects.select_for_update().get(
+                    employee=instance.employee,
+                    leave_type=instance.leave_type,
+                    year=date.today().year
+                )
+                balance.pending_days += Decimal(str(days_diff))
+                balance.save()
+                
+        return instance

@@ -317,3 +317,138 @@ class LeaveRequestCreateAPITests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("end_date", response.data)
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class LeaveRequestUpdateAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='update_tester@example.com',
+            password='Password123!'
+        )
+        self.other_user = User.objects.create_user(
+            email='other_update_tester@example.com',
+            password='Password123!'
+        )
+        self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
+        self.current_year = date.today().year
+        
+        self.balance = LeaveBalance.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            year=self.current_year,
+            allocated_days=Decimal('20.0'),
+            used_days=Decimal('5.0'),
+            pending_days=Decimal('3.0')
+        )
+        # Remaining balance is 20 - 5 - 3 = 12 days
+        
+        from leaves.models import LeaveRequest
+        self.pending_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=date(self.current_year, 8, 1),
+            end_date=date(self.current_year, 8, 3),
+            total_days=3,
+            status=LeaveRequest.Status.PENDING
+        )
+        
+        self.approved_req = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type,
+            start_date=date(self.current_year, 9, 1),
+            end_date=date(self.current_year, 9, 2),
+            total_days=2,
+            status=LeaveRequest.Status.APPROVED
+        )
+        
+        self.other_pending_req = LeaveRequest.objects.create(
+            employee=self.other_user,
+            leave_type=self.leave_type,
+            start_date=date(self.current_year, 10, 1),
+            end_date=date(self.current_year, 10, 3),
+            total_days=3,
+            status=LeaveRequest.Status.PENDING
+        )
+
+    def test_update_leave_success(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-update', kwargs={'pk': self.pending_req.pk})
+        
+        payload = {
+            'start_date': f'{self.current_year}-08-01',
+            'end_date': f'{self.current_year}-08-05',
+            'total_days': 5,
+            'reason': 'Extended Vacation'
+        }
+        
+        response = self.client.put(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.pending_req.refresh_from_db()
+        self.assertEqual(self.pending_req.total_days, 5)
+        self.assertEqual(self.pending_req.reason, 'Extended Vacation')
+        self.assertEqual(self.pending_req.status, 'PENDING')
+        
+        # Pending days should have increased by 2 (from 3 to 5)
+        self.balance.refresh_from_db()
+        self.assertEqual(self.balance.pending_days, Decimal('5.0'))
+
+    def test_update_leave_not_owner_forbidden(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-update', kwargs={'pk': self.other_pending_req.pk})
+        
+        payload = {
+            'start_date': f'{self.current_year}-10-01',
+            'end_date': f'{self.current_year}-10-05',
+            'total_days': 5,
+            'reason': 'Hacking attempt'
+        }
+        
+        response = self.client.put(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_leave_not_pending_error(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-update', kwargs={'pk': self.approved_req.pk})
+        
+        payload = {
+            'start_date': f'{self.current_year}-09-01',
+            'end_date': f'{self.current_year}-09-05',
+            'total_days': 5,
+            'reason': 'Extended Vacation'
+        }
+        
+        response = self.client.put(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Only pending requests can be modified.", str(response.data))
+
+    def test_update_leave_overlap_error(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-update', kwargs={'pk': self.pending_req.pk})
+        
+        # Overlaps with approved_req (Sep 1 to Sep 2)
+        payload = {
+            'start_date': f'{self.current_year}-09-02',
+            'end_date': f'{self.current_year}-09-04',
+            'total_days': 3,
+            'reason': 'Overlap test'
+        }
+        
+        response = self.client.put(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Requested dates overlap with an existing leave request.", str(response.data))
+
+    def test_update_leave_insufficient_balance(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse('leaves_api:leave-update', kwargs={'pk': self.pending_req.pk})
+        
+        payload = {
+            'start_date': f'{self.current_year}-08-01',
+            'end_date': f'{self.current_year}-08-16',
+            'total_days': 16, # Old total_days=3, diff=13. Remaining=12. 13 > 12 -> error
+            'reason': 'Too long'
+        }
+        
+        response = self.client.put(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Requested days exceed available leave balance.", str(response.data))

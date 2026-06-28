@@ -75,7 +75,7 @@ class LeaveRequest(models.Model):
         db_table = 'leaves_leaverequest'
         ordering = ['-applied_at']
         indexes = [
-            models.Index(fields=['employee', 'status'], name='idx_leavereq_emp_status'),
+            models.Index(fields=['employee', 'status', 'leave_type'], name='idx_leavereq_emp_stat_type'),
             models.Index(fields=['start_date', 'end_date'], name='idx_leavereq_dates'),
         ]
         constraints = [

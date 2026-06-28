@@ -24,7 +24,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../types/auth';
-import { ROLE_HOME_ROUTES } from '../types/auth';
+
 
 // -------------------------------------------------------------------------- //
 // Loading spinner                                                             //
@@ -81,9 +81,9 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps): React.JSX
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 3. Role not permitted — redirect to the user's own home dashboard.
+  // 3. Role not permitted — redirect to access denied page.
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={ROLE_HOME_ROUTES[user.role]} replace />;
+    return <Navigate to="/access-denied" replace />;
   }
 
   // 4. Authenticated and authorised — render nested route.

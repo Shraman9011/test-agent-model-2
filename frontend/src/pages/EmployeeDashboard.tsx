@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LeaveBalances } from '../components/LeaveBalances';
+import { UpcomingHolidays } from '../components/UpcomingHolidays';
 
 export function EmployeeDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -14,14 +15,18 @@ export function EmployeeDashboard(): React.JSX.Element {
 
       <LeaveBalances />
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Recent Leave Requests</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+          <div className="px-6 py-5 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Recent Leave Requests</h3>
+          </div>
+          <div className="p-6 text-center text-gray-500 flex-1">
+            <p>No recent requests to display.</p>
+            {/* Table will go here later */}
+          </div>
         </div>
-        <div className="p-6 text-center text-gray-500">
-          <p>No recent requests to display.</p>
-          {/* Table will go here later */}
-        </div>
+
+        <UpcomingHolidays />
       </div>
     </div>
   );

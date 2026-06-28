@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_str
 
@@ -158,4 +158,78 @@ class AuthAPITests(APITestCase):
         # 3. Try to use blacklisted refresh token (optional, simplejwt does this)
         refresh_url = '/api/auth/refresh/' # Even if we didn't add it, we can verify manually via the token
         # To truly test blacklist, we could inspect the OutstandingToken table if needed
+
+class PasswordResetConfirmAPITests(APITestCase):
+
+    def setUp(self):
+        self.url = reverse('users_api:password-reset-confirm')
+        self.user = User.objects.create_user(
+            email='confirm@example.com',
+            password='oldpassword123',
+            first_name='Confirm',
+            last_name='User',
+            role='EMPLOYEE'
+        )
+        self.uid = urlsafe_base64_encode(force_str(self.user.pk).encode())
+        self.token = default_token_generator.make_token(self.user)
+
+    def test_password_reset_confirm_success(self):
+        """
+        Submitting a valid uid, token, and new password updates the password.
+        """
+        new_password = 'NewStrongPassword123!'
+        response = self.client.post(self.url, {
+            'uid': self.uid,
+            'token': self.token,
+            'new_password': new_password
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], "Your password has been successfully reset.")
+        
+        # Verify the password was actually updated
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_password))
+
+    def test_password_reset_confirm_invalid_token(self):
+        """
+        Submitting an invalid token returns 400 Bad Request.
+        """
+        response = self.client.post(self.url, {
+            'uid': self.uid,
+            'token': 'invalid-token',
+            'new_password': 'NewStrongPassword123!'
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('token', response.data)
+        self.assertEqual(response.data['token'][0], 'The reset token is invalid or has expired.')
+
+    def test_password_reset_confirm_invalid_uid(self):
+        """
+        Submitting an invalid uid returns 400 Bad Request.
+        """
+        response = self.client.post(self.url, {
+            'uid': 'invalid-uid',
+            'token': self.token,
+            'new_password': 'NewStrongPassword123!'
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('token', response.data)
+        self.assertEqual(response.data['token'][0], 'Invalid user ID or token.')
+
+    def test_password_reset_confirm_weak_password(self):
+        """
+        Submitting a weak password returns 400 Bad Request with complexity errors.
+        Django auth checks for common passwords, short passwords (min 8 chars), and entirely numeric passwords.
+        """
+        response = self.client.post(self.url, {
+            'uid': self.uid,
+            'token': self.token,
+            'new_password': '123'
+        })
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
 

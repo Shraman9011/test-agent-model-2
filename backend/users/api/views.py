@@ -27,6 +27,29 @@ class PasswordResetRequestView(APIView):
         # If the email format is completely invalid (not a string/email format)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from .serializers import PasswordResetConfirmSerializer
+
+class PasswordResetConfirmView(APIView):
+    """
+    POST /api/auth/password-reset/confirm
+    
+    Accepts uid, token, and new_password.
+    Validates token, enforces password complexity, and securely updates the password.
+    """
+    permission_classes = [] 
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Your password has been successfully reset."},
+                status=status.HTTP_200_OK
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # ------------------------------------------------------------------ #
 # Auth & JWT Views                                                     #
 # ------------------------------------------------------------------ #

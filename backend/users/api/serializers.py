@@ -58,6 +58,49 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             fail_silently=False,
         )
 
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.exceptions import ValidationError
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Serializer to validate the uid, token, and the new password.
+    Updates the password if everything is valid.
+    """
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        uid_b64 = attrs.get('uid')
+        token = attrs.get('token')
+        new_password = attrs.get('new_password')
+
+        try:
+            uid = urlsafe_base64_decode(uid_b64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist, UnicodeDecodeError):
+            raise ValidationError({'token': 'Invalid user ID or token.'})
+
+        if not default_token_generator.check_token(user, token):
+            raise ValidationError({'token': 'The reset token is invalid or has expired.'})
+
+        # Validate password complexity using Django's built-in validators
+        try:
+            validate_password(new_password, user)
+        except Exception as e:
+            raise ValidationError({'new_password': list(e.messages)})
+
+        attrs['user'] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data['user']
+        new_password = self.validated_data['new_password']
+        user.set_password(new_password)
+        user.save()
+        return user
+
 # ------------------------------------------------------------------ #
 # Auth & JWT Serializers                                               #
 # ------------------------------------------------------------------ #

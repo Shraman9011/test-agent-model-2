@@ -388,3 +388,21 @@ class LeaveRequestRejectView(APIView):
             
         serializer = LeaveRequestSerializer(leave_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+from rest_framework import viewsets
+from users.permissions import IsHRAdmin
+from leaves.models import LeavePolicy
+from .serializers import LeavePolicySerializer
+
+class LeavePolicyViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for leave policies. Only accessible by HR Administrators.
+    Provides GET and PUT endpoints for /api/v1/leave-policies/.
+    """
+    queryset = LeavePolicy.objects.all().order_by('id')
+    serializer_class = LeavePolicySerializer
+    permission_classes = [IsHRAdmin]
+    
+    # We only need GET and PUT/PATCH typically, but ModelViewSet provides all.
+    # We can restrict to list, retrieve, update, partial_update
+    http_method_names = ['get', 'put', 'patch', 'head', 'options']

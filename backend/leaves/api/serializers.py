@@ -201,3 +201,31 @@ class LeaveRequestUpdateSerializer(serializers.ModelSerializer):
                 balance.save()
                 
         return instance
+from leaves.models import LeavePolicy
+
+class LeavePolicySerializer(serializers.ModelSerializer):
+    apply_retroactively = serializers.BooleanField(write_only=True, required=False, default=False)
+    
+    class Meta:
+        model = LeavePolicy
+        fields = ['id', 'leave_type', 'default_annual_days', 'is_active', 'created_at', 'updated_at', 'apply_retroactively']
+        read_only_fields = ['id', 'leave_type', 'created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        apply_retroactively = validated_data.pop('apply_retroactively', False)
+        new_days = validated_data.get('default_annual_days')
+        
+        instance = super().update(instance, validated_data)
+        
+        if apply_retroactively and new_days is not None:
+            # Synchronously update existing balances for the current year
+            from django.utils import timezone
+            from leaves.models import LeaveBalance
+            current_year = timezone.now().year
+            
+            LeaveBalance.objects.filter(
+                leave_type=instance.leave_type,
+                year=current_year
+            ).update(allocated_days=new_days)
+            
+        return instance

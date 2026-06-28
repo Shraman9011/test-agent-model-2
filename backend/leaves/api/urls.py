@@ -1,12 +1,16 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     LeaveBalanceListView, HolidayListView, LeaveRequestHistoryView,
     LeaveRequestCreateView, LeaveRequestUpdateView, LeaveRequestCancelView,
     ManagerPendingLeavesView, LeaveRequestApproveView, ManagerHistoricalLeavesView,
-    LeaveRequestRejectView
+    LeaveRequestRejectView, LeavePolicyViewSet
 )
+from rest_framework.routers import DefaultRouter
 
 app_name = 'leaves_api'
+
+router = DefaultRouter()
+router.register(r'leave-policies', LeavePolicyViewSet, basename='leave-policies')
 
 urlpatterns = [
     path('leaves/balances', LeaveBalanceListView.as_view(), name='leave-balances'),
@@ -19,4 +23,5 @@ urlpatterns = [
     path('v1/manager/leave-requests/<int:pk>/approve', LeaveRequestApproveView.as_view(), name='manager-approve-leave'),
     path('v1/manager/leave-requests/<int:pk>/reject', LeaveRequestRejectView.as_view(), name='manager-reject-leave'),
     path('v1/manager/leave-requests/history', ManagerHistoricalLeavesView.as_view(), name='manager-historical-leaves'),
+    path('', include(router.urls)),
 ]

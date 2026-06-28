@@ -1,0 +1,20 @@
+[
+  {
+    "id": "TC-001",
+    "passed": true,
+    "error": null,
+    "screenshot": null
+  },
+  {
+    "id": "TC-002",
+    "passed": true,
+    "error": null,
+    "screenshot": null
+  },
+  {
+    "id": "TC-003",
+    "passed": false,
+    "error": "page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('text=\"Failed to reset password\"') to be visible\u001b[22m\n",
+    "screenshot": null
+  }
+]

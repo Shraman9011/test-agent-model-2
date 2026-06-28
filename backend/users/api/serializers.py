@@ -61,6 +61,9 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     """
@@ -79,10 +82,12 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         try:
             uid = urlsafe_base64_decode(uid_b64).decode()
             user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist, UnicodeDecodeError):
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist, UnicodeDecodeError) as e:
+            logger.error(f"Password reset failed: Invalid uid '{uid_b64}'. Exception: {e}")
             raise ValidationError({'token': 'Invalid user ID or token.'})
 
         if not default_token_generator.check_token(user, token):
+            logger.warning(f"Password reset failed: check_token returned False for user '{user.email}' and token '{token}'")
             raise ValidationError({'token': 'The reset token is invalid or has expired.'})
 
         # Validate password complexity using Django's built-in validators

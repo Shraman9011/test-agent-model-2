@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient from '../api/client';
+import { apiClient } from '../api/client';
 import { Mail, CheckCircle } from 'lucide-react';
 
 export function ForgotPasswordPage(): React.JSX.Element {
@@ -21,7 +21,7 @@ export function ForgotPasswordPage(): React.JSX.Element {
 
     try {
       // POST to backend API
-      await apiClient.post('/auth/password-reset', { email });
+      await apiClient.post('/api/auth/password-reset', { email });
       // Generic success message regardless of actual email existence
       setIsSuccess(true);
     } catch (err: unknown) {

@@ -32,10 +32,14 @@ class LeaveBalanceListView(generics.ListAPIView):
         cache_key = get_leave_balance_cache_key(user_id, current_year)
 
         # Try to get from cache
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            logger.debug(f"Cache hit for {cache_key}")
-            return Response(cached_data)
+        try:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                logger.debug(f"Cache hit for {cache_key}")
+                return Response(cached_data)
+        except Exception as e:
+            logger.warning(f"Cache get failed for {cache_key}: {e}")
+            cached_data = None
         
         logger.debug(f"Cache miss for {cache_key}")
         # Fetch from DB
@@ -44,7 +48,11 @@ class LeaveBalanceListView(generics.ListAPIView):
         data = serializer.data
         
         # Store in cache for 1 hour (3600 seconds)
-        cache.set(cache_key, data, timeout=3600)
+        try:
+            cache.set(cache_key, data, timeout=3600)
+        except Exception as e:
+            logger.warning(f"Cache set failed for {cache_key}: {e}")
+
         return Response(data)
 
 class HolidayListView(generics.ListAPIView):
@@ -81,7 +89,7 @@ class LeaveRequestHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = LeaveRequest.objects.filter(employee=user).select_related('leave_type', 'employee', 'reviewed_by')
+        queryset = LeaveRequest.objects.filter(employee=user).select_related('leave_type', 'employee', 'manager')
         
         status = self.request.query_params.get('status')
         if status:

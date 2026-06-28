@@ -59,15 +59,16 @@ class LeaveRequest(models.Model):
         db_index=True,
     )
     applied_at = models.DateTimeField(auto_now_add=True)
-    reviewed_by = models.ForeignKey(
+    manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='reviewed_leaves',
+        related_name='managed_leaves',
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    review_note = models.TextField(blank=True)
+    manager_comments = models.TextField(blank=True, null=True)
+    rejection_reason = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -77,6 +78,7 @@ class LeaveRequest(models.Model):
         indexes = [
             models.Index(fields=['employee', 'status', 'leave_type'], name='idx_leavereq_emp_stat_type'),
             models.Index(fields=['start_date', 'end_date'], name='idx_leavereq_dates'),
+            models.Index(fields=['manager', 'status'], name='idx_leavereq_manager_status'),
         ]
         constraints = [
             models.CheckConstraint(

@@ -13,4 +13,8 @@ def invalidate_leave_balance_cache(sender, instance, **kwargs):
         # We also clear pending cache since pending days would decrease
         year = date.today().year
         cache_key = get_leave_balance_cache_key(instance.employee.id, year)
-        cache.delete(cache_key)
+        try:
+            cache.delete(cache_key)
+        except Exception as e:
+            # We use print here as logging might not be configured identically in signals, or we can just ignore
+            print(f"Failed to invalidate cache for {cache_key}: {e}")

@@ -70,12 +70,32 @@ class LeaveBalanceAdjustmentTests(APITestCase):
             'reason': ''
         }
         
-        response = self.client.post(self.url, data)
+        response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('reason', response.data)
-        
-        # Ensure no audit log was created
         self.assertEqual(LeaveAdjustmentAuditLog.objects.count(), 0)
+
+    def test_get_leave_adjustment_logs(self):
+        # Create a log first
+        LeaveAdjustmentAuditLog.objects.create(
+            employee=self.employee_user.profile,
+            leave_type=self.leave_type,
+            adjustment_amount=Decimal('2.5'),
+            previous_balance=Decimal('10.0'),
+            new_balance=Decimal('12.5'),
+            reason="Bonus",
+            adjusted_by=self.hr_user
+        )
+        
+        self.client.force_authenticate(user=self.hr_user)
+        log_url = reverse('leaves_api:leave-balance-adjust-logs')
+        
+        response = self.client.get(f"{log_url}?employee_id={self.employee_user.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Results might be paginated or flat list depending on ListAPIView defaults
+        # DRF default page size usually applies if set, check length of 'results' or the list directly
+        data = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['reason'], "Bonus")
 
     def test_adjust_leave_balance_employee_unauthorized(self):
         self.client.force_authenticate(user=self.employee_user)

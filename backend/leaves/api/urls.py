@@ -3,7 +3,8 @@ from .views import (
     LeaveBalanceListView, HolidayListView, LeaveRequestHistoryView,
     LeaveRequestCreateView, LeaveRequestUpdateView, LeaveRequestCancelView,
     ManagerPendingLeavesView, LeaveRequestApproveView, ManagerHistoricalLeavesView,
-    LeaveRequestRejectView, LeavePolicyViewSet, LeaveBalanceAdjustView
+    LeaveRequestRejectView, LeavePolicyViewSet, LeaveBalanceAdjustView,
+    LeaveAdjustmentAuditLogListView
 )
 from rest_framework.routers import DefaultRouter
 
@@ -24,5 +25,6 @@ urlpatterns = [
     path('v1/manager/leave-requests/<int:pk>/reject', LeaveRequestRejectView.as_view(), name='manager-reject-leave'),
     path('v1/manager/leave-requests/history', ManagerHistoricalLeavesView.as_view(), name='manager-historical-leaves'),
     path('v1/leave-balances/adjust/', LeaveBalanceAdjustView.as_view(), name='leave-balance-adjust'),
+    path('v1/leave-balances/adjustments/logs/', LeaveAdjustmentAuditLogListView.as_view(), name='leave-balance-adjust-logs'),
     path('', include(router.urls)),
 ]

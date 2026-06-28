@@ -477,3 +477,19 @@ class LeaveBalanceAdjustView(APIView):
             "previous_balance": str(previous_balance),
             "new_balance": str(new_balance)
         }, status=status.HTTP_200_OK)
+
+class LeaveAdjustmentAuditLogListView(generics.ListAPIView):
+    """
+    GET /api/v1/leave-balances/adjustments/logs/
+    Retrieves adjustment audit logs.
+    Supports filtering by employee_id.
+    """
+    serializer_class = LeaveAdjustmentAuditLogSerializer
+    permission_classes = [IsHRAdmin]
+    
+    def get_queryset(self):
+        queryset = LeaveAdjustmentAuditLog.objects.select_related('employee__user', 'leave_type', 'adjusted_by').order_by('-timestamp')
+        employee_id = self.request.query_params.get('employee_id')
+        if employee_id:
+            queryset = queryset.filter(employee__user_id=employee_id)
+        return queryset

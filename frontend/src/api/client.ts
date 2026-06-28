@@ -36,3 +36,14 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Manual Leave Adjustment API
+export const adjustLeaveBalance = async (data: { employee_id: number; leave_type_id: number; adjustment_amount: number; reason: string; year?: number }): Promise<unknown> => {
+  const response = await apiClient.post('/api/v1/leave-balances/adjust/', data);
+  return response.data;
+};
+
+export const getLeaveAdjustmentLogs = async (employeeId: number): Promise<unknown> => {
+  const response = await apiClient.get('/api/v1/leave-balances/adjustments/logs/', { params: { employee_id: employeeId } });
+  return response.data;
+};

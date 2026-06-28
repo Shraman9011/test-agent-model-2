@@ -14,6 +14,7 @@ import { AccessDeniedPage } from './pages/AccessDeniedPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { UserManagement } from './pages/UserManagement';
+import { EmployeeProfile } from './pages/EmployeeProfile';
 
 function App(): React.JSX.Element {
   return (
@@ -46,6 +47,7 @@ function App(): React.JSX.Element {
             <Route element={<ProtectedRoute allowedRoles={['HR_ADMIN']} />}>
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
               <Route path="/dashboard/admin/users" element={<UserManagement />} />
+              <Route path="/dashboard/admin/users/:id" element={<EmployeeProfile />} />
             </Route>
           </Route>
 

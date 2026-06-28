@@ -27,7 +27,7 @@ class LeaveBalanceListView(generics.ListAPIView):
     def get_queryset(self):
         # Fallback if caching logic is bypassed, but normally we override list()
         current_year = date.today().year
-        return LeaveBalance.objects.filter(employee=self.request.user, year=current_year).select_related('leave_type')
+        return LeaveBalance.objects.filter(employee=self.request.user.profile, year=current_year).select_related('leave_type')
 
     def list(self, request, *args, **kwargs):
         user_id = request.user.id
@@ -155,7 +155,7 @@ class LeaveRequestCancelView(APIView):
         with transaction.atomic():
             try:
                 balance = LeaveBalance.objects.select_for_update().get(
-                    employee=leave_request.employee,
+                    employee=leave_request.employee.profile,
                     leave_type=leave_request.leave_type,
                     year=date.today().year
                 )
@@ -252,7 +252,7 @@ class LeaveRequestApproveView(APIView):
         with transaction.atomic():
             try:
                 balance = LeaveBalance.objects.select_for_update().get(
-                    employee=leave_request.employee,
+                    employee=leave_request.employee.profile,
                     leave_type=leave_request.leave_type,
                     year=date.today().year
                 )
@@ -354,7 +354,7 @@ class LeaveRequestRejectView(APIView):
         with transaction.atomic():
             try:
                 balance = LeaveBalance.objects.select_for_update().get(
-                    employee=leave_request.employee,
+                    employee=leave_request.employee.profile,
                     leave_type=leave_request.leave_type,
                     year=date.today().year
                 )

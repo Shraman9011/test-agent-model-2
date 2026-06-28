@@ -235,3 +235,10 @@ class EmployeeProfile(models.Model):
         return f"{self.user.get_full_name()} Profile"
 
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_employee_profile(sender, instance, created, **kwargs):
+    if created:
+        EmployeeProfile.objects.get_or_create(user=instance)

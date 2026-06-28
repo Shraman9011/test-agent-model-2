@@ -16,7 +16,7 @@ class LeaveRequestCreateEmailTests(APITestCase):
         self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         
         self.balance = LeaveBalance.objects.create(
-            employee=self.employee, leave_type=self.leave_type, year=timezone.now().date().year,
+            employee=self.employee.profile, leave_type=self.leave_type, year=timezone.now().date().year,
             allocated_days=20, used_days=0, pending_days=0
         )
         

@@ -87,7 +87,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
         current_year = date.today().year
         try:
             balance = LeaveBalance.objects.get(
-                employee=employee,
+                employee=employee.profile,
                 leave_type=leave_type,
                 year=current_year
             )
@@ -116,7 +116,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             
             # Update the balance pending days
             balance = LeaveBalance.objects.select_for_update().get(
-                employee=employee,
+                employee=employee.profile,
                 leave_type=leave_type,
                 year=current_year
             )
@@ -170,7 +170,7 @@ class LeaveRequestUpdateSerializer(serializers.ModelSerializer):
             current_year = date.today().year
             try:
                 balance = LeaveBalance.objects.get(
-                    employee=employee,
+                    employee=employee.profile,
                     leave_type=leave_type,
                     year=current_year
                 )
@@ -193,7 +193,7 @@ class LeaveRequestUpdateSerializer(serializers.ModelSerializer):
             instance = super().update(instance, validated_data)
             if days_diff != 0:
                 balance = LeaveBalance.objects.select_for_update().get(
-                    employee=instance.employee,
+                    employee=instance.employee.profile,
                     leave_type=instance.leave_type,
                     year=date.today().year
                 )

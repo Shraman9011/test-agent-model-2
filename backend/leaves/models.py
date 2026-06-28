@@ -102,9 +102,10 @@ class LeaveBalance(models.Model):
     """Tracks allocated, used, and pending leave days per employee per type per year."""
 
     employee = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'users.EmployeeProfile',
         on_delete=models.CASCADE,
         related_name='leave_balances',
+        to_field='user',
     )
     leave_type = models.ForeignKey(
         LeaveType,
@@ -185,3 +186,41 @@ class Holiday(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.date})"
+
+
+class LeaveAdjustmentAuditLog(models.Model):
+    """Immutable audit trail for manual leave balance adjustments."""
+
+    employee = models.ForeignKey(
+        'users.EmployeeProfile',
+        on_delete=models.CASCADE,
+        related_name='leave_adjustments',
+    )
+    leave_type = models.ForeignKey(
+        LeaveType,
+        on_delete=models.CASCADE,
+        related_name='adjustments',
+    )
+    adjustment_amount = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        help_text="Positive for addition, negative for deduction."
+    )
+    reason = models.TextField()
+    adjusted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='made_leave_adjustments',
+        help_text="HR Admin who made the adjustment."
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'leaves_leaveadjustmentauditlog'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['employee', 'timestamp'], name='idx_leaveadj_emp_time'),
+        ]
+
+    def __str__(self):
+        return f"{self.employee} - {self.leave_type.name} ({self.adjustment_amount})"

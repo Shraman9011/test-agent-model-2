@@ -21,7 +21,7 @@ class ManagerRejectLeaveTests(APITestCase):
         
         # Give employee a balance
         self.balance = LeaveBalance.objects.create(
-            employee=self.employee, leave_type=self.leave_type, year=timezone.now().date().year,
+            employee=self.employee.profile, leave_type=self.leave_type, year=timezone.now().date().year,
             allocated_days=20, used_days=0, pending_days=2
         )
         

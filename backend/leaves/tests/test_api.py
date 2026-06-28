@@ -32,7 +32,7 @@ class LeaveBalanceAPITests(APITestCase):
         self.current_year = date.today().year
         
         self.balance = LeaveBalance.objects.create(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=self.current_year,
             allocated_days=Decimal('20.0'),
@@ -65,7 +65,7 @@ class LeaveBalanceAPITests(APITestCase):
     def test_role_based_access_only_own_balances(self):
         # Even if other balances exist, user should only see their own
         LeaveBalance.objects.create(
-            employee=self.other_user,
+            employee=self.other_user.profile,
             leave_type=self.leave_type,
             year=self.current_year,
             allocated_days=Decimal('10.0')
@@ -239,7 +239,7 @@ class LeaveRequestCreateAPITests(APITestCase):
         self.current_year = date.today().year
         
         self.balance = LeaveBalance.objects.create(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=self.current_year,
             allocated_days=Decimal('20.0'),
@@ -333,7 +333,7 @@ class LeaveRequestUpdateAPITests(APITestCase):
         self.current_year = date.today().year
         
         self.balance = LeaveBalance.objects.create(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=self.current_year,
             allocated_days=Decimal('20.0'),
@@ -468,7 +468,7 @@ class LeaveRequestCancelAPITests(APITestCase):
         self.current_year = date.today().year
         
         self.balance = LeaveBalance.objects.create(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=self.current_year,
             allocated_days=Decimal('20.0'),

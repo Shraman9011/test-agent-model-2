@@ -177,7 +177,7 @@ class LeaveBalanceModelTest(TestCase):
 
     def _make_balance(self, **kwargs):
         defaults = dict(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=2026,
             allocated_days=Decimal('21.0'),
@@ -217,7 +217,7 @@ class LeaveBalanceModelTest(TestCase):
 
     def test_negative_allocated_days_fails_validation(self):
         bal = LeaveBalance(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=self.leave_type,
             year=2026,
             allocated_days=Decimal('-5.0'),
@@ -240,7 +240,7 @@ class LeaveBalanceModelTest(TestCase):
         sick = make_leave_type(name='Sick Leave', max_days=10)
         self._make_balance()
         bal2 = LeaveBalance.objects.create(
-            employee=self.user,
+            employee=self.user.profile,
             leave_type=sick,
             year=2026,
             allocated_days=Decimal('10.0'),

@@ -218,15 +218,18 @@ class LeavePolicySerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
         
         if apply_retroactively and new_days is not None:
-            # Synchronously update existing balances for the current year
+            # Asynchronously update existing balances for the current year
             from django.utils import timezone
-            from leaves.models import LeaveBalance
+            from leaves.tasks import update_retroactive_leave_balances
+            
             current_year = timezone.now().year
             
-            LeaveBalance.objects.filter(
-                leave_type=instance.leave_type,
-                year=current_year
-            ).update(allocated_days=new_days)
+            # Dispatch background task via Celery
+            update_retroactive_leave_balances.delay(
+                leave_type_id=instance.leave_type.id,
+                new_days=float(new_days),  # Pass as float/string to ensure serialization
+                current_year=current_year
+            )
             
         return instance
 

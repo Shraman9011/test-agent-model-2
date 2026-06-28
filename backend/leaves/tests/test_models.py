@@ -57,10 +57,10 @@ class LeaveTypeModelTest(TestCase):
         self.assertTrue(lt.is_active)
 
     def test_name_must_be_unique(self):
-        make_leave_type(name='Sick Leave')
+        make_leave_type(name='Test Sick Leave')
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                make_leave_type(name='Sick Leave')
+                make_leave_type(name='Test Sick Leave')
 
     def test_max_days_must_be_at_least_one(self):
         lt = LeaveType(name='Zero Days', max_days_per_year=0)
@@ -68,8 +68,8 @@ class LeaveTypeModelTest(TestCase):
             lt.full_clean()
 
     def test_str_returns_name(self):
-        lt = make_leave_type(name='Casual Leave')
-        self.assertEqual(str(lt), 'Casual Leave')
+        lt = make_leave_type(name='Test Casual Leave')
+        self.assertEqual(str(lt), 'Test Casual Leave')
 
 
 # --------------------------------------------------------------------------- #
@@ -237,7 +237,7 @@ class LeaveBalanceModelTest(TestCase):
         self.assertEqual(bal2.year, 2027)
 
     def test_different_leave_types_same_user_year_allowed(self):
-        sick = make_leave_type(name='Sick Leave', max_days=10)
+        sick = make_leave_type(name='Test Sick Leave 2', max_days=10)
         self._make_balance()
         bal2 = LeaveBalance.objects.create(
             employee=self.user.profile,
@@ -245,4 +245,4 @@ class LeaveBalanceModelTest(TestCase):
             year=2026,
             allocated_days=Decimal('10.0'),
         )
-        self.assertEqual(bal2.leave_type.name, 'Sick Leave')
+        self.assertEqual(bal2.leave_type.name, 'Test Sick Leave 2')

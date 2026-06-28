@@ -27,6 +27,7 @@ class LeaveBalanceAPITests(APITestCase):
             first_name='Other',
             last_name='User'
         )
+        LeaveBalance.objects.all().delete()
         
         self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         self.current_year = date.today().year
@@ -163,6 +164,7 @@ class LeaveRequestHistoryAPITests(APITestCase):
             email='other_tester@example.com',
             password='Password123!'
         )
+        LeaveBalance.objects.all().delete()
         
         self.leave_type_annual = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         self.leave_type_sick = LeaveType.objects.create(name='Sick', max_days_per_year=10)
@@ -235,6 +237,7 @@ class LeaveRequestCreateAPITests(APITestCase):
             email='create_tester@example.com',
             password='Password123!'
         )
+        LeaveBalance.objects.all().delete()
         self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         self.current_year = date.today().year
         
@@ -329,6 +332,7 @@ class LeaveRequestUpdateAPITests(APITestCase):
             email='other_update_tester@example.com',
             password='Password123!'
         )
+        LeaveBalance.objects.all().delete()
         self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         self.current_year = date.today().year
         
@@ -464,6 +468,7 @@ class LeaveRequestCancelAPITests(APITestCase):
             email='other_cancel_tester@example.com',
             password='Password123!'
         )
+        LeaveBalance.objects.all().delete()
         self.leave_type = LeaveType.objects.create(name='Annual', max_days_per_year=20)
         self.current_year = date.today().year
         

@@ -224,3 +224,64 @@ class LeaveAdjustmentAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type.name} ({self.adjustment_amount})"
+
+class LeavePolicy(models.Model):
+    """
+    System-wide default leave policies defining annual allocations.
+    """
+    leave_type = models.OneToOneField(
+        LeaveType,
+        on_delete=models.CASCADE,
+        related_name='policy',
+        help_text="The leave type this policy applies to."
+    )
+    default_annual_days = models.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        validators=[MinValueValidator(Decimal('0.0'))],
+        help_text="Default number of days allocated annually to employees."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this policy is currently active for automatic allocation."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'leaves_leavepolicy'
+        verbose_name = 'Leave Policy'
+        verbose_name_plural = 'Leave Policies'
+
+    def __str__(self):
+        return f"Policy for {self.leave_type.name}: {self.default_annual_days} days"
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from users.models import EmployeeProfile
+
+@receiver(post_save, sender=EmployeeProfile)
+def assign_default_leave_balances(sender, instance, created, **kwargs):
+    """
+    Automatically assign default leave balances to newly created employee profiles.
+    """
+    if created:
+        current_year = timezone.now().year
+        active_policies = LeavePolicy.objects.filter(is_active=True)
+        
+        balances_to_create = []
+        for policy in active_policies:
+            balances_to_create.append(
+                LeaveBalance(
+                    employee=instance,
+                    leave_type=policy.leave_type,
+                    year=current_year,
+                    allocated_days=policy.default_annual_days,
+                    used_days=Decimal('0.0'),
+                    pending_days=Decimal('0.0')
+                )
+            )
+        
+        if balances_to_create:
+            LeaveBalance.objects.bulk_create(balances_to_create)

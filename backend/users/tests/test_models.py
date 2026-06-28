@@ -13,7 +13,7 @@ Covers:
   - __str__ representation
 
 Run with:
-    python manage.py test users.tests.test_models \\
+    python manage.py test users.tests.test_models \
         --settings=test_agent_model_2.settings_test
 """
 
@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from users.models import UserRole
+from users.models import UserRole, EmployeeProfile
 
 User = get_user_model()
 
@@ -150,6 +150,7 @@ class UserManagerTest(TestCase):
         )
         self.assertTrue(su.is_staff)
         self.assertTrue(su.is_superuser)
+        self.assertTrue(su.is_active)
         self.assertEqual(su.role, UserRole.HR_ADMIN)
 
     def test_create_superuser_rejects_false_is_staff(self):
@@ -339,3 +340,47 @@ class UserFullCleanTest(TestCase):
         user.set_password('pass')
         with self.assertRaises(ValidationError):
             user.full_clean()
+
+class EmployeeProfileTests(TestCase):
+    def setUp(self):
+        self.manager_user = User.objects.create_user(
+            email='manager@test.com',
+            first_name='Manager',
+            last_name='User',
+            password='Password123!',
+            role=UserRole.MANAGER
+        )
+        self.employee_user = User.objects.create_user(
+            email='employee@test.com',
+            first_name='Employee',
+            last_name='User',
+            password='Password123!',
+            role=UserRole.EMPLOYEE
+        )
+        self.manager_profile = EmployeeProfile.objects.create(
+            user=self.manager_user,
+            role='Engineering Lead',
+            is_active=True
+        )
+
+    def test_employee_profile_creation(self):
+        """Test creating an employee profile with a self-referential manager."""
+        employee_profile = EmployeeProfile.objects.create(
+            user=self.employee_user,
+            role='Software Engineer',
+            manager=self.manager_profile,
+            is_active=True
+        )
+
+        self.assertEqual(employee_profile.user, self.employee_user)
+        self.assertEqual(employee_profile.role, 'Software Engineer')
+        self.assertEqual(employee_profile.manager, self.manager_profile)
+        self.assertTrue(employee_profile.is_active)
+        self.assertEqual(str(employee_profile), 'Employee User Profile')
+
+    def test_employee_profile_default_active(self):
+        """Test that active status defaults to True."""
+        employee_profile = EmployeeProfile.objects.create(
+            user=self.employee_user,
+        )
+        self.assertTrue(employee_profile.is_active)

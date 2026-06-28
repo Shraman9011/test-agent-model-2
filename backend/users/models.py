@@ -189,3 +189,49 @@ class User(AbstractUser):
         """Return the user's full name (first + last)."""
         return self.get_full_name()
 
+
+# --------------------------------------------------------------------------- #
+# Employee Profile model                                                      #
+# --------------------------------------------------------------------------- #
+
+class EmployeeProfile(models.Model):
+    """
+    Extended employee profile storing reporting lines and employment status.
+    Provides a OneToOne extension to the User model.
+    """
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='profile'
+    )
+    role = models.CharField(
+        _('job role/title'), 
+        max_length=100, 
+        blank=True,
+        help_text=_('The job title or internal role of the employee.')
+    )
+    manager = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='direct_reports',
+        help_text=_('The manager this employee reports to.')
+    )
+    is_active = models.BooleanField(
+        _('active status'),
+        default=True,
+        help_text=_('Whether this employee is currently active in the company.')
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'users_employeeprofile'
+        verbose_name = _('employee profile')
+        verbose_name_plural = _('employee profiles')
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} Profile"
+
+

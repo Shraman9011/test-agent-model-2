@@ -27,6 +27,8 @@ class LeaveBalanceListView(generics.ListAPIView):
     def get_queryset(self):
         # Fallback if caching logic is bypassed, but normally we override list()
         current_year = date.today().year
+        if not hasattr(self.request.user, 'profile'):
+            return LeaveBalance.objects.none()
         return LeaveBalance.objects.filter(employee=self.request.user.profile, year=current_year).select_related('leave_type')
 
     def list(self, request, *args, **kwargs):

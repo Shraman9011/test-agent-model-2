@@ -24,12 +24,12 @@ export function DeactivateEmployeeDialog({ employee, onSuccess, onCancel }: Deac
     setError('');
     try {
       if (employee.is_active) {
-        await apiClient.delete(`/api/v1/employees/${employee.id}/`);
+        await apiClient.delete(`/api/employees/${employee.id}/`);
       } else {
         // For reactivation, we would PATCH is_active: true. 
         // Assuming we need this based on standard flows, but the task just says "deactivation".
         // Let's implement reactivation as well since it's the same endpoint/toggle conceptually.
-        await apiClient.patch(`/api/v1/employees/${employee.id}/`, { is_active: true });
+        await apiClient.patch(`/api/employees/${employee.id}/`, { is_active: true });
       }
       onSuccess();
     } catch (err: unknown) {

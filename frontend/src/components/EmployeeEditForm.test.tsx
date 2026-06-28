@@ -57,7 +57,7 @@ describe('EmployeeEditForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
     
     await waitFor(() => {
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/v1/employees/1/', expect.objectContaining({
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/employees/1/', expect.objectContaining({
         role: 'Senior Developer'
       }));
       expect(mockOnSuccess).toHaveBeenCalled();

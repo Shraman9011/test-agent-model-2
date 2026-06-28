@@ -16,6 +16,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { UserManagement } from './pages/UserManagement';
 import { EmployeeProfile } from './pages/EmployeeProfile';
 import { PolicyConfiguration } from './pages/PolicyConfiguration';
+import { SystemReports } from './pages/SystemReports';
 
 function App(): React.JSX.Element {
   return (
@@ -50,6 +51,7 @@ function App(): React.JSX.Element {
               <Route path="/dashboard/admin/users" element={<UserManagement />} />
               <Route path="/dashboard/admin/users/:id" element={<EmployeeProfile />} />
               <Route path="/dashboard/admin/policies" element={<PolicyConfiguration />} />
+              <Route path="/dashboard/admin/reports" element={<SystemReports />} />
             </Route>
           </Route>
 

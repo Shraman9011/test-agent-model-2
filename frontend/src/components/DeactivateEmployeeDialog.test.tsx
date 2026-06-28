@@ -48,7 +48,7 @@ describe('DeactivateEmployeeDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Deactivate Employee' }));
     
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/api/v1/employees/1/');
+      expect(apiClient.delete).toHaveBeenCalledWith('/api/employees/1/');
       expect(mockOnSuccess).toHaveBeenCalled();
     });
   });
@@ -62,7 +62,7 @@ describe('DeactivateEmployeeDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reactivate Employee' }));
     
     await waitFor(() => {
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/v1/employees/1/', { is_active: true });
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/employees/1/', { is_active: true });
       expect(mockOnSuccess).toHaveBeenCalled();
     });
   });

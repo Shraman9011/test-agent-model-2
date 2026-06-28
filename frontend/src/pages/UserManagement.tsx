@@ -31,7 +31,7 @@ export function UserManagement(): React.JSX.Element {
   const fetchEmployees = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/v1/employees/');
+      const response = await apiClient.get('/api/employees/');
       setEmployees(response.data);
     } catch (err) {
       console.error('Failed to load employees', err);

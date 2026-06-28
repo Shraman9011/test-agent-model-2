@@ -26,7 +26,7 @@ export function EmployeeProfile(): React.JSX.Element {
 
   const fetchEmployee = useCallback(async () => {
     try {
-      const response = await apiClient.get(`/api/v1/employees/${id}/`);
+      const response = await apiClient.get(`/api/employees/${id}/`);
       setEmployee(response.data);
     } catch (err) {
       console.error('Failed to load employee', err);

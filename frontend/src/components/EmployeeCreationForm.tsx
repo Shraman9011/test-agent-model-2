@@ -33,9 +33,9 @@ export function EmployeeCreationForm({ onSuccess, onCancel }: EmployeeCreationFo
   useEffect(() => {
     const fetchManagers = async (): Promise<void> => {
       try {
-        const response = await apiClient.get('/api/v1/employees/');
+        const response = await apiClient.get('/api/employees/');
         // Assume API returns a list of employees. Filter active only if needed, 
-        // though /api/v1/employees/ might return all. 
+        // though /api/employees/ might return all. 
         setManagers(response.data);
       } catch (err) {
         console.error('Failed to load managers', err);
@@ -71,7 +71,7 @@ export function EmployeeCreationForm({ onSuccess, onCancel }: EmployeeCreationFo
         ...formData,
         manager: formData.manager ? parseInt(formData.manager, 10) : null,
       };
-      await apiClient.post('/api/v1/employees/', payload);
+      await apiClient.post('/api/employees/', payload);
       onSuccess();
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { email?: string[], detail?: string, error?: string } } };

@@ -22,13 +22,13 @@ export function AdminDashboard(): React.JSX.Element {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-indigo-500">
           <h3 className="text-lg font-medium text-gray-900 mb-1">Leave Policies</h3>
           <p className="text-sm text-gray-500 mb-4">Configure leave types, accrual rules, and public holidays.</p>
-          <button className="text-indigo-600 text-sm font-medium hover:text-indigo-800">Configure Policies &rarr;</button>
+          <Link to="/dashboard/admin/policies" className="text-indigo-600 text-sm font-medium hover:text-indigo-800">Configure Policies &rarr;</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-indigo-500">
           <h3 className="text-lg font-medium text-gray-900 mb-1">System Reports</h3>
           <p className="text-sm text-gray-500 mb-4">Export organization-wide leave data and audit logs.</p>
-          <button className="text-indigo-600 text-sm font-medium hover:text-indigo-800">View Reports &rarr;</button>
+          <Link to="/dashboard/admin/reports" className="text-indigo-600 text-sm font-medium hover:text-indigo-800">View Reports &rarr;</Link>
         </div>
       </div>
 

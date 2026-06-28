@@ -46,7 +46,7 @@ export function EmployeeEditForm({ employee, onSuccess, onCancel }: EmployeeEdit
   useEffect(() => {
     const fetchManagers = async (): Promise<void> => {
       try {
-        const response = await apiClient.get('/api/v1/employees/');
+        const response = await apiClient.get('/api/employees/');
         // Exclude the current employee from being their own manager
         const managerList = response.data.filter((m: EmployeeOption) => m.id !== employee.id);
         setManagers(managerList);
@@ -78,7 +78,7 @@ export function EmployeeEditForm({ employee, onSuccess, onCancel }: EmployeeEdit
         ...formData,
         manager: formData.manager ? parseInt(formData.manager, 10) : null,
       };
-      await apiClient.patch(`/api/v1/employees/${employee.id}/`, payload);
+      await apiClient.patch(`/api/employees/${employee.id}/`, payload);
       onSuccess();
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { detail?: string, error?: string } } };

@@ -3,8 +3,9 @@ from datetime import date
 from django.core.cache import cache
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from leaves.models import LeaveBalance, Holiday
-from .serializers import LeaveBalanceSerializer, HolidaySerializer
+from rest_framework.pagination import PageNumberPagination
+from leaves.models import LeaveBalance, Holiday, LeaveRequest
+from .serializers import LeaveBalanceSerializer, HolidaySerializer, LeaveRequestSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -62,3 +63,32 @@ class HolidayListView(generics.ListAPIView):
             date__gte=current_date,
             date__year=current_date.year
         ).order_by('date')
+
+class LeaveRequestPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class LeaveRequestHistoryView(generics.ListAPIView):
+    """
+    GET /api/leaves/history
+    Retrieves the authenticated employee's leave request history.
+    Supports filtering by status and leave_type.
+    """
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = LeaveRequestPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = LeaveRequest.objects.filter(employee=user).select_related('leave_type', 'employee', 'reviewed_by')
+        
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+            
+        leave_type_id = self.request.query_params.get('leave_type')
+        if leave_type_id:
+            queryset = queryset.filter(leave_type_id=leave_type_id)
+            
+        return queryset

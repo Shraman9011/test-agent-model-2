@@ -151,3 +151,79 @@ class HolidayAPITests(APITestCase):
         # Should be sorted chronologically
         self.assertEqual(response.data[0]['name'], "Sooner")
         self.assertEqual(response.data[1]['name'], "Later")
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class LeaveRequestHistoryAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='history_tester@example.com',
+            password='Password123!'
+        )
+        self.other_user = User.objects.create_user(
+            email='other_tester@example.com',
+            password='Password123!'
+        )
+        
+        self.leave_type_annual = LeaveType.objects.create(name='Annual', max_days_per_year=20)
+        self.leave_type_sick = LeaveType.objects.create(name='Sick', max_days_per_year=10)
+        
+        from leaves.models import LeaveRequest
+        
+        # Create some requests for the user
+        self.req1 = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type_annual,
+            start_date=date.today(),
+            end_date=date.today(),
+            total_days=1,
+            status=LeaveRequest.Status.APPROVED
+        )
+        self.req2 = LeaveRequest.objects.create(
+            employee=self.user,
+            leave_type=self.leave_type_sick,
+            start_date=date.today(),
+            end_date=date.today(),
+            total_days=1,
+            status=LeaveRequest.Status.PENDING
+        )
+        
+        # Create a request for another user
+        LeaveRequest.objects.create(
+            employee=self.other_user,
+            leave_type=self.leave_type_annual,
+            start_date=date.today(),
+            end_date=date.today(),
+            total_days=1,
+            status=LeaveRequest.Status.APPROVED
+        )
+        
+        self.url = reverse('leaves_api:leave-history')
+
+    def test_get_history_unauthenticated(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_history_authenticated_only_own(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        # Should only see their own 2 requests, not the other_user's
+        self.assertEqual(len(response.data['results']), 2)
+
+    def test_get_history_filter_by_status(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url, {'status': 'PENDING'})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['status'], 'PENDING')
+
+    def test_get_history_filter_by_leave_type(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url, {'leave_type': self.leave_type_sick.id})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['leave_type']['name'], 'Sick')

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ManagerPendingRequests } from '../components/ManagerPendingRequests';
 
 export function ManagerDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -37,17 +38,7 @@ export function ManagerDashboard(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">Pending Approvals</h3>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-            Action Needed
-          </span>
-        </div>
-        <div className="p-6 text-center text-gray-500 py-12">
-          <p>The pending requests table will be implemented here.</p>
-        </div>
-      </div>
+      <ManagerPendingRequests />
     </div>
   );
 }

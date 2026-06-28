@@ -49,3 +49,47 @@ def send_manager_notification(leave_request: LeaveRequest):
     msg.send(fail_silently=False)
     
     return True
+
+def send_employee_decision_notification(leave_request: LeaveRequest):
+    """
+    Sends an email notification to the employee when their manager approves or rejects a leave request.
+    
+    Args:
+        leave_request (LeaveRequest): The leave request object containing the decision and comments.
+    """
+    if leave_request.status not in [LeaveRequest.Status.APPROVED, LeaveRequest.Status.REJECTED]:
+        # Only notify on approved or rejected
+        return False
+        
+    employee = leave_request.employee
+    manager_name = leave_request.manager.get_full_name() or leave_request.manager.email if leave_request.manager else "Your Manager"
+    
+    context = {
+        'employee_name': employee.get_full_name() or employee.email,
+        'manager_name': manager_name,
+        'leave_type': leave_request.leave_type.name,
+        'start_date': leave_request.start_date.strftime('%Y-%m-%d'),
+        'end_date': leave_request.end_date.strftime('%Y-%m-%d'),
+        'total_days': str(leave_request.total_days),
+        'dashboard_link': f"{get_frontend_url()}/dashboard/employee"
+    }
+    
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')
+    to_email = employee.email
+    
+    if leave_request.status == LeaveRequest.Status.APPROVED:
+        context['manager_comments'] = leave_request.manager_comments
+        subject = f"Leave Request Approved: {leave_request.leave_type.name}"
+        text_content = render_to_string('emails/employee_approved.txt', context)
+        html_content = render_to_string('emails/employee_approved.html', context)
+    else:  # REJECTED
+        context['rejection_reason'] = leave_request.rejection_reason
+        subject = f"Leave Request Rejected: {leave_request.leave_type.name}"
+        text_content = render_to_string('emails/employee_rejected.txt', context)
+        html_content = render_to_string('emails/employee_rejected.html', context)
+        
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send(fail_silently=False)
+    
+    return True

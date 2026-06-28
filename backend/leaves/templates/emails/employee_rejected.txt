@@ -1,0 +1,18 @@
+Hello {{ employee_name }},
+
+Your manager, {{ manager_name }}, has reviewed your leave request and unfortunately it has been rejected.
+
+Leave Details:
+- Leave Type: {{ leave_type }}
+- Start Date: {{ start_date }}
+- End Date:   {{ end_date }}
+- Total Days: {{ total_days }}
+
+Rejection Reason:
+{{ rejection_reason }}
+
+View your dashboard here:
+{{ dashboard_link }}
+
+Thank you,
+The LeaveSync Team

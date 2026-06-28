@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.core import mail
-from leaves.email_utils import send_manager_notification, get_frontend_url
+from leaves.email_utils import send_manager_notification, send_employee_decision_notification, get_frontend_url
 from users.models import User
 from leaves.models import LeaveRequest, LeaveType
 import datetime
@@ -54,6 +54,81 @@ class EmailUtilsTests(TestCase):
         )
         
         result = send_manager_notification(leave_request)
+        
+        self.assertFalse(result)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_send_employee_decision_notification_approved(self):
+        leave_request = LeaveRequest.objects.create(
+            employee=self.employee,
+            manager=self.manager,
+            leave_type=self.leave_type,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + datetime.timedelta(days=2),
+            total_days=3,
+            reason='Vacation',
+            status=LeaveRequest.Status.APPROVED,
+            manager_comments="Have a great time!"
+        )
+        
+        result = send_employee_decision_notification(leave_request)
+        
+        self.assertTrue(result)
+        self.assertEqual(len(mail.outbox), 1)
+        
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, "Leave Request Approved: Annual")
+        self.assertEqual(email.to, ["employee@example.com"])
+        self.assertIn("Manager User", email.body)
+        self.assertIn("Employee User", email.body)
+        self.assertIn("Have a great time!", email.body)
+        
+        html_content, _ = email.alternatives[0]
+        self.assertIn("Leave Request Approved", html_content)
+        self.assertIn("Have a great time!", html_content)
+
+    def test_send_employee_decision_notification_rejected(self):
+        leave_request = LeaveRequest.objects.create(
+            employee=self.employee,
+            manager=self.manager,
+            leave_type=self.leave_type,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + datetime.timedelta(days=2),
+            total_days=3,
+            reason='Vacation',
+            status=LeaveRequest.Status.REJECTED,
+            rejection_reason="Need you here for the launch."
+        )
+        
+        result = send_employee_decision_notification(leave_request)
+        
+        self.assertTrue(result)
+        self.assertEqual(len(mail.outbox), 1)
+        
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, "Leave Request Rejected: Annual")
+        self.assertEqual(email.to, ["employee@example.com"])
+        self.assertIn("Manager User", email.body)
+        self.assertIn("Employee User", email.body)
+        self.assertIn("Need you here for the launch.", email.body)
+        
+        html_content, _ = email.alternatives[0]
+        self.assertIn("Leave Request Rejected", html_content)
+        self.assertIn("Need you here for the launch.", html_content)
+
+    def test_send_employee_decision_notification_pending(self):
+        leave_request = LeaveRequest.objects.create(
+            employee=self.employee,
+            manager=self.manager,
+            leave_type=self.leave_type,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + datetime.timedelta(days=2),
+            total_days=3,
+            reason='Vacation',
+            status=LeaveRequest.Status.PENDING
+        )
+        
+        result = send_employee_decision_notification(leave_request)
         
         self.assertFalse(result)
         self.assertEqual(len(mail.outbox), 0)

@@ -1,0 +1,20 @@
+Hello {{ employee_name }},
+
+Great news! Your manager, {{ manager_name }}, has approved your leave request.
+
+Leave Details:
+- Leave Type: {{ leave_type }}
+- Start Date: {{ start_date }}
+- End Date:   {{ end_date }}
+- Total Days: {{ total_days }}
+
+{% if manager_comments %}
+Manager Comments:
+{{ manager_comments }}
+{% endif %}
+
+View your dashboard here:
+{{ dashboard_link }}
+
+Thank you,
+The LeaveSync Team

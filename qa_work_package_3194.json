@@ -1,0 +1,149 @@
+{
+  "summary": {
+    "taskId": 3194,
+    "taskName": "Design and execute QA test cases for Leave Request Submission",
+    "priority": "MEDIUM",
+    "storyPoints": 2,
+    "dueDate": "2026-08-03T17:00:00.000Z",
+    "assignee": "Mayur Deshmukh",
+    "blockedBy": []
+  },
+  "test_plan": {
+    "objective": "Verify leave request submission handles valid requests, validates overlapping dates, and correctly applies leave balance limits.",
+    "scope": {
+      "in_scope": [
+        "Apply Leave Form submission",
+        "Leave Balance validation",
+        "Overlapping date validation"
+      ],
+      "out_of_scope": [
+        "Manager approval workflow (covered in separate task)"
+      ]
+    },
+    "test_types": [
+      "E2E UI"
+    ],
+    "entry_criteria": [
+      "Local server running",
+      "Test users seeded"
+    ],
+    "exit_criteria": [
+      "All test cases executed",
+      "Bugs reported"
+    ],
+    "risks": []
+  },
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "title": "Submit valid leave request",
+      "type": "positive",
+      "area": "leave_submission",
+      "preconditions": [
+        "User is logged in as employee"
+      ],
+      "steps": [
+        "Click Apply for Leave",
+        "Select leave type",
+        "Select future start and end dates",
+        "Enter reason",
+        "Submit"
+      ],
+      "expected_result": "Success message is displayed, modal closes, and balance/history updates.",
+      "priority": "HIGH",
+      "playwright_script": "const { chromium } = require('playwright');\n(async () => {\n  let result = { passed: false, error: null, screenshot: null };\n  const browser = await chromium.launch({ headless: true });\n  const page = await browser.newPage();\n  try {\n    await page.goto('http://localhost:5173/login');\n    await page.fill('input[type=\"email\"]', 'employee@unichronic.com');\n    await page.fill('input[type=\"password\"]', 'employee123!');\n    await page.click('button[type=\"submit\"]');\n    await page.waitForURL('http://localhost:5173/dashboard/employee');\n    \n    await page.click('text=Apply for Leave');\n    await page.waitForSelector('text=Submit Leave Request');\n    \n    await page.selectOption('select[name=\"leaveType\"]', { index: 1 });\n    \n    const nextMonth = new Date();\n    nextMonth.setMonth(nextMonth.getMonth() + 2);\n    const start = nextMonth.toISOString().split('T')[0];\n    nextMonth.setDate(nextMonth.getDate() + 1);\n    const end = nextMonth.toISOString().split('T')[0];\n    \n    await page.fill('input[name=\"startDate\"]', start);\n    await page.fill('input[name=\"endDate\"]', end);\n    await page.fill('textarea[name=\"reason\"]', 'Family vacation');\n    \n    await page.click('button[type=\"submit\"]:has-text(\"Submit Request\")');\n    \n    await page.waitForSelector('text=Leave request submitted successfully!', { timeout: 5000 });\n    result.passed = true;\n  } catch (err) {\n    result.error = err.toString();\n    await page.screenshot({ path: 'tc001-error.png' });\n    result.screenshot = 'tc001-error.png';\n  } finally {\n    await browser.close();\n    console.log(JSON.stringify(result));\n  }\n})();"
+    },
+    {
+      "id": "TC-002",
+      "title": "Submit leave request exceeding balance",
+      "type": "negative",
+      "area": "leave_submission",
+      "preconditions": [
+        "User is logged in as employee"
+      ],
+      "steps": [
+        "Click Apply for Leave",
+        "Select leave type with low balance",
+        "Select dates exceeding balance",
+        "Enter reason",
+        "Submit"
+      ],
+      "expected_result": "Error message displayed regarding insufficient balance.",
+      "priority": "HIGH",
+      "playwright_script": "const { chromium } = require('playwright');\n(async () => {\n  let result = { passed: false, error: null, screenshot: null };\n  const browser = await chromium.launch({ headless: true });\n  const page = await browser.newPage();\n  try {\n    await page.goto('http://localhost:5173/login');\n    await page.fill('input[type=\"email\"]', 'employee@unichronic.com');\n    await page.fill('input[type=\"password\"]', 'employee123!');\n    await page.click('button[type=\"submit\"]');\n    await page.waitForURL('http://localhost:5173/dashboard/employee');\n    \n    await page.click('text=Apply for Leave');\n    await page.waitForSelector('text=Submit Leave Request');\n    \n    await page.selectOption('select[name=\"leaveType\"]', { index: 1 });\n    \n    const nextMonth = new Date();\n    nextMonth.setMonth(nextMonth.getMonth() + 3);\n    const start = nextMonth.toISOString().split('T')[0];\n    nextMonth.setDate(nextMonth.getDate() + 100);\n    const end = nextMonth.toISOString().split('T')[0];\n    \n    await page.fill('input[name=\"startDate\"]', start);\n    await page.fill('input[name=\"endDate\"]', end);\n    await page.fill('textarea[name=\"reason\"]', 'Long vacation');\n    \n    await page.click('button[type=\"submit\"]:has-text(\"Submit Request\")');\n    \n    await page.waitForSelector('text=/balance/i', { timeout: 5000 });\n    result.passed = true;\n  } catch (err) {\n    result.error = err.toString();\n    await page.screenshot({ path: 'tc002-error.png' });\n    result.screenshot = 'tc002-error.png';\n  } finally {\n    await browser.close();\n    console.log(JSON.stringify(result));\n  }\n})();"
+    },
+    {
+      "id": "TC-003",
+      "title": "Submit leave request with overlapping dates",
+      "type": "negative",
+      "area": "leave_submission",
+      "preconditions": [
+        "User is logged in as employee",
+        "User has an existing leave request"
+      ],
+      "steps": [
+        "Click Apply for Leave",
+        "Select same dates as existing request",
+        "Enter reason",
+        "Submit"
+      ],
+      "expected_result": "Error message displayed regarding overlapping dates.",
+      "priority": "HIGH",
+      "playwright_script": "const { chromium } = require('playwright');\n(async () => {\n  let result = { passed: false, error: null, screenshot: null };\n  const browser = await chromium.launch({ headless: true });\n  const page = await browser.newPage();\n  try {\n    await page.goto('http://localhost:5173/login');\n    await page.fill('input[type=\"email\"]', 'employee@unichronic.com');\n    await page.fill('input[type=\"password\"]', 'employee123!');\n    await page.click('button[type=\"submit\"]');\n    await page.waitForURL('http://localhost:5173/dashboard/employee');\n    \n    await page.click('text=Apply for Leave');\n    await page.waitForSelector('text=Submit Leave Request');\n    await page.selectOption('select[name=\"leaveType\"]', { index: 1 });\n    \n    const nextMonth = new Date();\n    nextMonth.setMonth(nextMonth.getMonth() + 4);\n    const start = nextMonth.toISOString().split('T')[0];\n    nextMonth.setDate(nextMonth.getDate() + 1);\n    const end = nextMonth.toISOString().split('T')[0];\n    \n    await page.fill('input[name=\"startDate\"]', start);\n    await page.fill('input[name=\"endDate\"]', end);\n    await page.fill('textarea[name=\"reason\"]', 'Overlap 1');\n    \n    await page.click('button[type=\"submit\"]:has-text(\"Submit Request\")');\n    await page.waitForSelector('text=Leave request submitted successfully!', { timeout: 5000 });\n    \n    // Close modal if it didn't close automatically, wait for it to disappear\n    // Wait for a short time just to be sure state has updated\n    await page.waitForTimeout(1000);\n    \n    await page.click('text=Apply for Leave');\n    await page.waitForSelector('text=Submit Leave Request');\n    await page.selectOption('select[name=\"leaveType\"]', { index: 1 });\n    await page.fill('input[name=\"startDate\"]', start);\n    await page.fill('input[name=\"endDate\"]', end);\n    await page.fill('textarea[name=\"reason\"]', 'Overlap 2');\n    \n    await page.click('button[type=\"submit\"]:has-text(\"Submit Request\")');\n    \n    await page.waitForSelector('text=/overlap/i', { timeout: 5000 });\n    result.passed = true;\n  } catch (err) {\n    result.error = err.toString();\n    await page.screenshot({ path: 'tc003-error.png' });\n    result.screenshot = 'tc003-error.png';\n  } finally {\n    await browser.close();\n    console.log(JSON.stringify(result));\n  }\n})();"
+    }
+  ],
+  "subtask_breakdown": [
+    {
+      "subtaskId": 14098,
+      "subtaskName": "Write positive and negative test cases for leave submission",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": []
+    },
+    {
+      "subtaskId": 14099,
+      "subtaskName": "Execute manual and automated API tests for boundary conditions",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 2,
+      "dependencies": [],
+      "action_items": []
+    },
+    {
+      "subtaskId": 14100,
+      "subtaskName": "Verify UI error states for overlapping dates and insufficient balance",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": []
+    },
+    {
+      "subtaskId": 14101,
+      "subtaskName": "Document test execution results and log defects",
+      "suggested_assignee_role": "QA",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": []
+    }
+  ],
+  "checklist_status": [
+    {
+      "checklistId": 12652,
+      "itemName": "Test cases cover all acceptance criteria for Story 596",
+      "isCompleted": false,
+      "verification_approach": "Manual validation of test suite"
+    },
+    {
+      "checklistId": 12653,
+      "itemName": "No critical or high defects remain open",
+      "isCompleted": false,
+      "verification_approach": "Bug tracker query"
+    },
+    {
+      "checklistId": 12654,
+      "itemName": "QA test report generated and shared with the team",
+      "isCompleted": false,
+      "verification_approach": "Publish JSON payload"
+    }
+  ]
+}

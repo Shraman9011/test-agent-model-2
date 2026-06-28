@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     # Local apps
     'users.apps.UsersConfig',   # Custom User model — must come before leaves
     'leaves.apps.LeavesConfig',
@@ -135,3 +136,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # All FKs in leaves app use settings.AUTH_USER_MODEL so they
 # automatically point to users.User.
 AUTH_USER_MODEL = 'users.User'
+
+# ------------------------------------------------------------------ #
+# Email Configuration                                                  #
+# ------------------------------------------------------------------ #
+
+# Use console backend for development/testing (prints emails to stdout)
+# For production, set EMAIL_BACKEND to SMTP and configure EMAIL_HOST etc. in .env
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')

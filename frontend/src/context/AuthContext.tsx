@@ -80,9 +80,13 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
    *
    * @param authenticatedUser - The user object returned by the API.
    * @param token             - The JWT access token.
+   * @param refreshToken      - The JWT refresh token.
    */
-  const login = useCallback((authenticatedUser: AuthUser, token: string): void => {
+  const login = useCallback((authenticatedUser: AuthUser, token: string, refreshToken?: string): void => {
     localStorage.setItem(TOKEN_KEY, token);
+    if (refreshToken) {
+      localStorage.setItem('auth_refresh', refreshToken);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     setUser(authenticatedUser);
   }, []);
@@ -93,6 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
    */
   const logout = useCallback((): void => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('auth_refresh');
     localStorage.removeItem(USER_KEY);
     setUser(null);
   }, []);

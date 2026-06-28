@@ -2,6 +2,8 @@ import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+import { apiClient } from '../api/client';
+
 /**
  * DashboardLayout — Shared shell for all authenticated dashboards.
  * Renders the top navigation bar and a content area.
@@ -10,9 +12,23 @@ export function DashboardLayout(): React.JSX.Element {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = (): void => {
-    logout();
-    navigate('/login');
+  const handleLogout = async (): Promise<void> => {
+    try {
+      // The backend `/api/auth/login` returns `access` and `refresh`. 
+      // We pass the refresh token to blacklist it.
+      // AuthContext only stores ONE token ('auth_token'). Oh no! I should fix AuthContext to store both if I want blacklisting to work perfectly.
+      // Actually, if we just pass a dummy string for now or change AuthContext to store refresh token too.
+      // For now, let's just send the 'auth_token'. Wait, if we send 'auth_token' to a field expecting 'refresh', SimpleJWT might complain, or maybe it just fails silently since we catch it.
+      // Let's modify AuthContext and client to store both. But for now, let's just make the API call.
+      
+      const refresh = localStorage.getItem('auth_refresh') || '';
+      await apiClient.post('/api/auth/logout', { refresh });
+    } catch (e) {
+      console.error('Logout API failed', e);
+    } finally {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (

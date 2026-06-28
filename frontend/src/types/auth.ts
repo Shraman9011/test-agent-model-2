@@ -41,8 +41,9 @@ export interface AuthContextValue {
    *
    * @param user - The authenticated user object.
    * @param token - The JWT access token returned by the backend.
+   * @param refreshToken - The JWT refresh token returned by the backend.
    */
-  login: (user: AuthUser, token: string) => void;
+  login: (user: AuthUser, token: string, refreshToken?: string) => void;
   /** Log the user out, clear the stored token, and redirect to /login. */
   logout: () => void;
 }

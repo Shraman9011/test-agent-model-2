@@ -11,10 +11,27 @@ dist/
 venv/
 .venv/
 
+# Django
+*.sqlite3
+db.sqlite3
+/backend/.env
+/backend/staticfiles/
+/backend/mediafiles/
+
+# Environment files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
 # Frontend (Vite/React)
 node_modules/
 dist/
-.env
 
 # Docker
 docker.sock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

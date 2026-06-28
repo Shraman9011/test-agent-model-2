@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "uniassist": {
+      "command": "python",
+      "args": ["run.py"],
+      "cwd": "backend/mcp-server",
+      "env": {
+        "MCP_INTERNAL_SECRET": "uniassist-mcp-secret-2026"
+      }
+    }
+  }
+}

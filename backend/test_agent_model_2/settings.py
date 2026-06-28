@@ -29,6 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Local apps
+    'users.apps.UsersConfig',   # Custom User model — must come before leaves
+    'leaves.apps.LeavesConfig',
 ]
 
 MIDDLEWARE = [
@@ -122,3 +125,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ------------------------------------------------------------------ #
+# Authentication                                                       #
+# ------------------------------------------------------------------ #
+
+# Tell Django to use our custom User model instead of auth.User.
+# This must be set BEFORE the first migration is run.
+# All FKs in leaves app use settings.AUTH_USER_MODEL so they
+# automatically point to users.User.
+AUTH_USER_MODEL = 'users.User'

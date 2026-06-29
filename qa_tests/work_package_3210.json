@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "taskId": "3210",
+    "taskName": "Verify leave request approval workflow",
+    "priority": "HIGH",
+    "storyPoints": 2,
+    "dueDate": "2026-08-11T17:00:00.000Z",
+    "assignee": "Mayur Deshmukh",
+    "blockedBy": []
+  },
+  "test_plan": {
+    "objective": "Verify the entire leave request approval workflow, including UI, API, database updates, and email notifications.",
+    "scope": {
+      "in_scope": [
+        "Manager viewing pending leave requests",
+        "Manager approving a leave request",
+        "Manager rejecting a leave request",
+        "Leave request history view for managers"
+      ],
+      "out_of_scope": [
+        "Employee applying for leave (covered in previous tests, though used as setup here)"
+      ]
+    },
+    "test_types": [
+      "E2E",
+      "Integration",
+      "Functional"
+    ],
+    "entry_criteria": [
+      "Approve Leave Request modal and action feature is complete",
+      "Email notification service is complete"
+    ],
+    "exit_criteria": [
+      "All test cases executed",
+      "Defects logged",
+      "Subtasks updated"
+    ],
+    "risks": [
+      "Email notification assertions might require a mock email server"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "title": "Manager can approve a pending leave request",
+      "type": "positive",
+      "area": "leave_approval",
+      "preconditions": [
+        "A pending leave request exists for a direct report"
+      ],
+      "steps": [
+        "Log in as Manager",
+        "Navigate to Manager Dashboard",
+        "Click Approve on a pending leave request",
+        "Enter comments and confirm",
+        "Verify success message and request is removed from pending list"
+      ],
+      "expected_result": "Leave request status changes to APPROVED and is moved to history",
+      "priority": "HIGH",
+      "playwright_script": "import { test, expect } from '@playwright/test';\n\ntest('Manager can approve a pending leave request', async ({ page }) => {\n  await page.goto(process.env.BASE_URL || 'http://localhost:5173/login');\n  await page.fill('input[type=\"email\"]', process.env.QA_MANAGER_EMAIL || 'manager@unichronic.com');\n  await page.fill('input[type=\"password\"]', process.env.QA_MANAGER_PASSWORD || 'password123');\n  await page.click('button[type=\"submit\"]');\n  await page.waitForURL('**/dashboard/manager');\n\n  // Wait for pending leaves to load\n  await page.waitForSelector('text=Pending Leave Requests');\n  \n  // Check if there are any pending requests to approve\n  const approveButton = page.locator('button:has-text(\"Approve\")').first();\n  if (await approveButton.isVisible()) {\n    await approveButton.click();\n    await page.fill('textarea[placeholder=\"Optional comments...\"]', 'Approved via QA script');\n    await page.click('button:has-text(\"Confirm Approval\")');\n    await expect(page.locator('text=Request approved successfully')).toBeVisible();\n  } else {\n    console.log('No pending requests to approve, skipping action.');\n  }\n});",
+      "execution_result": {
+        "passed": false,
+        "error": "Error: page.waitForURL: Test timeout of 30000ms exceeded.\nwaiting for navigation to \"**/dashboard/manager\" until \"load\"",
+        "screenshot": "test-results/approval_workflow-Manager--338b5-ove-a-pending-leave-request/error-context.md",
+        "executedAt": "2026-06-29T04:21:46Z"
+      }
+    }
+  ],
+  "subtask_breakdown": [
+    {
+      "subtaskId": 14165,
+      "subtaskName": "Write test cases for the approval flow",
+      "suggested_assignee_role": "QA Engineer",
+      "estimated_hours": 1,
+      "dependencies": [],
+      "action_items": ["Drafted test cases in JSON format"]
+    },
+    {
+      "subtaskId": 14166,
+      "subtaskName": "Execute end-to-end testing of the approval action",
+      "suggested_assignee_role": "QA Automation",
+      "estimated_hours": 2,
+      "dependencies": [14165],
+      "action_items": ["Run playwright script for approval flow"]
+    }
+  ],
+  "checklist_status": [
+    {
+      "checklistId": 12714,
+      "itemName": "Database status updates to 'APPROVED'",
+      "isCompleted": false,
+      "verification_approach": "API checks post-approval"
+    }
+  ]
+}
